@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ScrollView, View, StyleSheet, Text } from "react-native";
+import { ScrollView, View, StyleSheet, Text, Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { Screen } from "../../components/Screen";
 import { Header } from "../../components/Header";
@@ -36,7 +37,18 @@ export function ChatScreen({ navigation }) {
 
   return (
     <Screen>
-      <Header title="Chat" subtitle={subtitle} />
+      <Header
+        title="Chat"
+        subtitle={subtitle}
+        right={
+          <Pressable
+            onPress={() => navigation.navigate("NewMessage")}
+            style={({ pressed }) => [styles.newBtn, pressed ? { opacity: 0.85 } : null]}
+          >
+            <Ionicons name="create-outline" size={18} color={theme.colors.primary} />
+          </Pressable>
+        }
+      />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: theme.spacing.xl }}>
         {threads.length === 0 ? (
           <View style={styles.empty}>
@@ -73,5 +85,13 @@ const styles = StyleSheet.create({
   emptyText: {
     ...theme.typography.body,
     color: theme.colors.mutedText,
+  },
+  newBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.chipBg,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

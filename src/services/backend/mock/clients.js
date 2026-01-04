@@ -7,7 +7,24 @@ export const clients = {
     let list = db.clients.filter((c) => c.workspaceId === workspaceId);
     if (query) {
       const q = String(query).toLowerCase();
-      list = list.filter((c) => c.name.toLowerCase().includes(q) || String(c.email).toLowerCase().includes(q));
+      // Predictive-ish search: show startsWith first, then includes.
+      list = list
+        .map((c) => {
+          const name = c.name.toLowerCase();
+          const email = String(c.email || "").toLowerCase();
+          const starts = name.startsWith(q) || email.startsWith(q);
+          const contains = name.includes(q) || email.includes(q);
+          const score = starts ? 2 : contains ? 1 : 0;
+          return { c, score, name };
+        })
+        .filter((x) => x.score > 0)
+        .sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return a.name.localeCompare(b.name);
+        })
+        .map((x) => x.c);
+
+      return list;
     }
     return list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   },

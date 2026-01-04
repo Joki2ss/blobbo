@@ -32,7 +32,7 @@ export function ClientsScreen({ navigation }) {
 
   return (
     <Screen>
-      <Header title="Clients" subtitle={subtitle} right={null} />
+      <Header title="Database" subtitle={subtitle} right={null} />
       <View style={styles.search}>
         <TextField label="Search" value={query} onChangeText={setQuery} placeholder="Name or email" />
       </View>

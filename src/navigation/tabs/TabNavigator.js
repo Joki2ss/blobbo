@@ -22,14 +22,25 @@ export function TabNavigator() {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.border,
         },
-        tabBarIcon: ({ color, size }) => {
+        tabBarIcon: ({ color, size, focused }) => {
           const name = iconName(route.name);
-          return <Ionicons name={name} size={size} color={color} />;
+          return (
+            <Ionicons
+              name={name}
+              size={size}
+              color={color}
+              style={{
+                padding: 6,
+                borderRadius: theme.radius.md,
+                backgroundColor: focused ? theme.colors.chipBg : "transparent",
+              }}
+            />
+          );
         },
       })}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Clients" component={ClientsScreen} />
+      <Tab.Screen name="Database" component={ClientsScreen} />
       <Tab.Screen name="Chat" component={ChatScreen} />
       <Tab.Screen name="Activity" component={ActivityScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
@@ -41,7 +52,7 @@ function iconName(routeName) {
   switch (routeName) {
     case "Dashboard":
       return "grid-outline";
-    case "Clients":
+    case "Database":
       return "people-outline";
     case "Chat":
       return "chatbubbles-outline";
