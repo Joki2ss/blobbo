@@ -9,9 +9,9 @@ export const BUSINESSCAFE_DESCRIPTION_KEY = "hub.businessCafe.description";
 // DO NOT require() or fetch; these filenames may not exist yet.
 // "LASCIA VUOTO SPAZIO IO MODIFICO NEL COPILOT POI"
 export const BUSINESSCAFE_PLACEHOLDER_IMAGES = {
-  mobile: "src/assets/businesscafe/cafétteria1mob.png",
-  tablet: "src/assets/businesscafe/caféteria1tab.png",
-  desktop: "src/assets/businesscafe/caféteria1pc.png",
+  mobile: "src/assets/businesscafe/cafetteria1_mob.png",
+  tablet: "src/assets/businesscafe/cafetteria1_tab.png",
+  desktop: "src/assets/businesscafe/cafetteria1_pc.png",
 };
 
 export function selectBusinessCafePlaceholderImageKey({ width }) {
