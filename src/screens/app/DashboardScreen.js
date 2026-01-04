@@ -66,7 +66,7 @@ export function DashboardScreen({ navigation }) {
           <KpiCard
             label="Pending docs"
             value={kpis.pendingDocs}
-            icon={<Ionicons name="document-text-outline" size={20} color={theme.colors.primary} />}
+            icon={<Ionicons name="document-text-outline" size={20} color={theme.colors.warning} />}
           />
         </View>
 
@@ -74,7 +74,7 @@ export function DashboardScreen({ navigation }) {
           <KpiCard
             label="Unread messages"
             value={kpis.unreadMessages}
-            icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.primary} />}
+            icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />}
           />
           <View style={{ width: theme.spacing.md }} />
           <Card style={styles.cardMini}>
