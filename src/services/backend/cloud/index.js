@@ -48,6 +48,12 @@ export const cloudBackend = {
     async sendMessage() {
       throw notConfigured();
     },
+    async cancelScheduledMessage() {
+      throw notConfigured();
+    },
+    async updateScheduledMessage() {
+      throw notConfigured();
+    },
     async markThreadRead() {
       throw notConfigured();
     },

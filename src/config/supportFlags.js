@@ -10,6 +10,8 @@ export const PAYMENT_LOGGING_ENABLED = false;
 // - LIVE: disabled by default, but can be enabled by flipping these constants.
 export const SUPPORT_TICKETS_ENABLED = false;
 export const DOCUMENT_EDITOR_ENABLED = false;
+export const PUBLIC_FEED_ENABLED = false;
+export const ADVANCED_MESSAGING_ENABLED = false;
 
 export function getSupportRuntimeConfig({ backendMode }) {
   const isMock = backendMode === "MOCK";
@@ -32,5 +34,7 @@ export function getSupportRuntimeConfig({ backendMode }) {
     PAYMENT_LOGGING_ENABLED,
     SUPPORT_TICKETS_ENABLED: isMock ? true : SUPPORT_TICKETS_ENABLED,
     DOCUMENT_EDITOR_ENABLED: isMock ? true : DOCUMENT_EDITOR_ENABLED,
+    PUBLIC_FEED_ENABLED: isMock ? true : PUBLIC_FEED_ENABLED,
+    ADVANCED_MESSAGING_ENABLED: isMock ? true : ADVANCED_MESSAGING_ENABLED,
   };
 }

@@ -24,7 +24,7 @@ export async function listDocumentsForOwner({ backendMode, sessionUser }) {
     .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
 }
 
-export async function createDocument({ backendMode, sessionUser, title }) {
+export async function createDocument({ backendMode, sessionUser, title, docType }) {
   const cfg = getSupportRuntimeConfig({ backendMode });
   assertEnabled(cfg);
   if (!sessionUser?.id) throw new Error("Not signed in");
@@ -32,6 +32,7 @@ export async function createDocument({ backendMode, sessionUser, title }) {
   const store = await loadDocumentsStore();
   // Local storage fallback (MOCK and optional LIVE).
   const doc = newDocument({ ownerUserId: sessionUser.id, title, mock: backendMode === "MOCK" });
+  if (docType) doc.docType = String(docType);
   store.documents = [doc, ...store.documents];
   await saveDocumentsStore(store);
   return doc;
@@ -62,6 +63,7 @@ export async function updateDocument({ backendMode, sessionUser, documentId, pat
 
   const next = {
     ...doc,
+    docType: patch?.docType != null ? String(patch.docType) : doc.docType,
     title: patch?.title != null ? String(patch.title).trim() || doc.title : doc.title,
     content: patch?.content != null ? String(patch.content) : doc.content,
     updatedAt: new Date().toISOString(),
@@ -99,5 +101,12 @@ export async function listDocumentMetadataForDeveloper({ backendMode, sessionUse
   const store = await loadDocumentsStore();
   return store.documents
     .filter((d) => d.ownerUserId === ownerUserId)
-    .map((d) => ({ documentId: d.documentId, ownerUserId: d.ownerUserId, title: d.title, updatedAt: d.updatedAt, version: d.version }));
+    .map((d) => ({
+      documentId: d.documentId,
+      ownerUserId: d.ownerUserId,
+      docType: d.docType,
+      title: d.title,
+      updatedAt: d.updatedAt,
+      version: d.version,
+    }));
 }

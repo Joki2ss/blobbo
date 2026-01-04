@@ -24,6 +24,7 @@ export function newDocument({ ownerUserId, title, mock = true }) {
   return {
     documentId: uuidv4(),
     ownerUserId,
+    docType: "note",
     title: String(title || "Untitled document").trim() || "Untitled document",
     content: "<p></p>",
     createdAt: now,

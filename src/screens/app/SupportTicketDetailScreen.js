@@ -18,6 +18,7 @@ import {
   setTicketStatusByDeveloper,
 } from "../../support/SupportTicketsService";
 import { isDeveloperUser } from "../../support/SupportPermissions";
+import { AdvancedMessageInput } from "../../chat/AdvancedMessageInput";
 
 export function SupportTicketDetailScreen({ navigation, route }) {
   const { session, backendMode, developerUnlocked } = useAppState();
@@ -54,15 +55,46 @@ export function SupportTicketDetailScreen({ navigation, route }) {
     refresh();
   }, [backendMode, user?.id, ticketId]);
 
-  async function send() {
+  async function sendBody(body) {
     const ok = await actions.safeCall(
-      () => postSupportMessage({ backendMode, sessionUser: user, ticketId, body: message }),
+      () => postSupportMessage({ backendMode, sessionUser: user, ticketId, body }),
       { title: "Ticket" }
     );
-    if (ok) {
-      setMessage("");
-      refresh();
+    if (ok) refresh();
+    return ok;
+  }
+
+  async function send() {
+    const body = String(message || "").trim();
+    if (!body) return;
+    const ok = await sendBody(body);
+    if (ok) setMessage("");
+  }
+
+  async function sendAdvanced(payload) {
+    // Tickets keep a simple message model. We map advanced payload to a safe text representation.
+    const text = String(payload?.text || "").trim();
+    const hasMedia = Array.isArray(payload?.media) && payload.media.length > 0;
+    const hasLocation = !!payload?.location?.link;
+    const scheduledAt = payload?.scheduledAt;
+
+    if (hasMedia) {
+      // Preserve existing attachment flow instead of introducing a new media pipeline for tickets.
+      // Users can still attach files via the existing button.
+      // This keeps the change incremental and non-breaking.
     }
+
+    let body = text;
+    if (!body && hasLocation) body = "";
+    if (hasLocation) body = `${body}${body ? "\n\n" : ""}Location: ${payload.location.link}`;
+    if (scheduledAt) body = `${body}${body ? "\n\n" : ""}[Scheduled for ${new Date(scheduledAt).toLocaleString()}]`;
+
+    body = String(body || "").trim();
+    if (!body && hasMedia) body = "[Media attached - use Attach file button]";
+    if (!body) return;
+
+    const ok = await sendBody(body);
+    if (ok) setMessage("");
   }
 
   const consent = ticket?.consentState;
@@ -212,8 +244,20 @@ export function SupportTicketDetailScreen({ navigation, route }) {
           ))}
 
           <View style={{ height: theme.spacing.md }} />
-          <TextField label="Message" value={message} onChangeText={setMessage} placeholder="Type a message" multiline />
-          <Button title="Send" onPress={send} disabled={!message.trim()} />
+          {cfg.ADVANCED_MESSAGING_ENABLED ? (
+            <AdvancedMessageInput
+              backendMode={backendMode}
+              value={message}
+              onChange={setMessage}
+              onSend={sendAdvanced}
+              disabled={false}
+            />
+          ) : (
+            <>
+              <TextField label="Message" value={message} onChangeText={setMessage} placeholder="Type a message" multiline />
+              <Button title="Send" onPress={send} disabled={!message.trim()} />
+            </>
+          )}
           <View style={{ height: theme.spacing.sm }} />
           <Button title="Attach file" variant="secondary" onPress={attach} />
           <View style={{ height: theme.spacing.sm }} />

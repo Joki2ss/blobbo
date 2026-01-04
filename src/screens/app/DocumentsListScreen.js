@@ -20,6 +20,7 @@ export function DocumentsListScreen({ navigation }) {
 
   const [docs, setDocs] = useState([]);
   const [title, setTitle] = useState("");
+  const [docType, setDocType] = useState("note");
 
   const canUse = isAdminOrBusiness(user?.role);
 
@@ -35,7 +36,7 @@ export function DocumentsListScreen({ navigation }) {
 
   async function create() {
     const t = title.trim() || "Untitled document";
-    const doc = await actions.safeCall(() => createDocument({ backendMode, sessionUser: user, title: t }), { title: "Documents" });
+    const doc = await actions.safeCall(() => createDocument({ backendMode, sessionUser: user, title: t, docType }), { title: "Documents" });
     if (doc) {
       setTitle("");
       refresh();
@@ -89,6 +90,12 @@ export function DocumentsListScreen({ navigation }) {
 
         <Card style={styles.card}>
           <Text style={styles.h}>Create document</Text>
+          <Text style={styles.muted}>Type</Text>
+          <View style={styles.typeRow}>
+            <Button title="Note" variant={docType === "note" ? "primary" : "secondary"} onPress={() => setDocType("note")} />
+            <Button title="Quote" variant={docType === "quote" ? "primary" : "secondary"} onPress={() => setDocType("quote")} />
+            <Button title="Contract" variant={docType === "contract" ? "primary" : "secondary"} onPress={() => setDocType("contract")} />
+          </View>
           <TextField label="Title" value={title} onChangeText={setTitle} placeholder="Document title" />
           <Button title="Create" onPress={create} />
           <View style={{ height: theme.spacing.sm }} />
@@ -139,6 +146,13 @@ const styles = StyleSheet.create({
   h: {
     ...theme.typography.h3,
     color: theme.colors.text,
+    marginBottom: theme.spacing.sm,
+  },
+  typeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
     marginBottom: theme.spacing.sm,
   },
 });

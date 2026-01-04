@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, StyleSheet, FlatList, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, StyleSheet, FlatList, KeyboardAvoidingView, Platform, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Screen } from "../../components/Screen";
@@ -10,16 +10,21 @@ import { useAppActions, useAppState } from "../../store/AppStore";
 import { isAdminOrBusiness } from "../../utils/roles";
 import { formatTime } from "../../utils/date";
 import { logEvent } from "../../services/logger";
+import { getSupportRuntimeConfig } from "../../config/supportFlags";
+import { AdvancedMessageInput } from "../../chat/AdvancedMessageInput";
 
 export function ChatThreadScreen({ navigation, route }) {
   const { workspace, session, backendMode } = useAppState();
   const actions = useAppActions();
   const clientId = route?.params?.clientId;
 
+  const cfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
+
   const [client, setClient] = useState(null);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [editingScheduled, setEditingScheduled] = useState(null);
 
   const listRef = useRef(null);
 
@@ -52,7 +57,7 @@ export function ChatThreadScreen({ navigation, route }) {
     return () => clearInterval(t);
   }, [workspace?.id, clientId, backendMode]);
 
-  async function onSend() {
+  async function onSendBasic() {
     if (!workspace?.id || !session?.user || !clientId) return;
     const payload = text.trim();
     if (!payload) return;
@@ -81,6 +86,56 @@ export function ChatThreadScreen({ navigation, route }) {
     setSending(false);
   }
 
+  async function onSendAdvanced({ text, media, location, scheduledAt }) {
+    if (!workspace?.id || !session?.user || !clientId) return;
+
+    const trimmed = String(text || "").trim();
+    if (!trimmed && (!Array.isArray(media) || media.length === 0) && !location) return;
+
+    setSending(true);
+    setText("");
+    logEvent("chat_send", { workspaceId: workspace.id, clientId });
+
+    await actions.safeCall(async () => {
+      const senderType = isAdminOrBusiness(session.user.role) ? "ADMIN" : "CLIENT";
+
+      if (editingScheduled?.messageId && backendMode === "MOCK") {
+        await actions.backend.chat.updateScheduledMessage({
+          workspaceId: workspace.id,
+          messageId: editingScheduled.messageId,
+          patch: {
+            text: trimmed,
+            media,
+            location,
+            scheduledAt,
+          },
+        });
+        setEditingScheduled(null);
+      } else {
+        await actions.backend.chat.sendMessage({
+          workspaceId: workspace.id,
+          clientId,
+          senderType,
+          senderId: session.user.id,
+          text: trimmed,
+          media,
+          location,
+          scheduledAt,
+          simulateReply: backendMode === "MOCK" && isAdminOrBusiness(session.user.role) && !(scheduledAt && scheduledAt > Date.now()),
+        });
+      }
+
+      await refresh();
+      setTimeout(() => {
+        try {
+          listRef.current?.scrollToEnd?.({ animated: true });
+        } catch {}
+      }, 50);
+    }, { title: "Send failed" });
+
+    setSending(false);
+  }
+
   const data = messages;
 
   return (
@@ -92,36 +147,84 @@ export function ChatThreadScreen({ navigation, route }) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => {
-            const isMe = item.senderId === session?.user?.id && item.senderType !== "CLIENT";
+            const status = item.status || "SENT";
+            const senderType = item.senderType || item.senderRole;
+            const isMe = item.senderId === session?.user?.id && senderType !== "CLIENT";
             const bubbleStyle = isMe ? styles.bubbleMe : styles.bubbleOther;
             const textStyle = isMe ? styles.textMe : styles.textOther;
             return (
               <View style={[styles.row, isMe ? styles.rowMe : styles.rowOther]}>
                 <View style={[styles.bubble, bubbleStyle]}>
                   <Text style={[styles.msgText, textStyle]}>{item.text}</Text>
+                  {status === "SCHEDULED" ? (
+                    <Text style={[styles.time, isMe ? styles.timeMe : styles.timeOther]}>
+                      Scheduled • {item.scheduledAt ? new Date(item.scheduledAt).toLocaleString() : ""}
+                    </Text>
+                  ) : status === "CANCELED" ? (
+                    <Text style={[styles.time, isMe ? styles.timeMe : styles.timeOther]}>Canceled</Text>
+                  ) : null}
                   <Text style={[styles.time, isMe ? styles.timeMe : styles.timeOther]}>{formatTime(item.createdAt)}</Text>
+
+                  {cfg.ADVANCED_MESSAGING_ENABLED && backendMode === "MOCK" && isMe && status === "SCHEDULED" ? (
+                    <View style={styles.scheduledActions}>
+                      <Pressable
+                        onPress={() => {
+                          setEditingScheduled({ messageId: item.messageId || item.id });
+                          setText(item.text || "");
+                        }}
+                        style={({ pressed }) => [styles.actionChip, pressed ? { opacity: 0.85 } : null]}
+                      >
+                        <Text style={styles.actionText}>Edit</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={async () => {
+                          const mid = item.messageId || item.id;
+                          const ok = await actions.safeCall(
+                            () => actions.backend.chat.cancelScheduledMessage({ workspaceId: workspace.id, messageId: mid }),
+                            { title: "Cancel" }
+                          );
+                          if (ok?.ok) refresh();
+                        }}
+                        style={({ pressed }) => [styles.actionChip, pressed ? { opacity: 0.85 } : null]}
+                      >
+                        <Text style={styles.actionText}>Cancel</Text>
+                      </Pressable>
+                    </View>
+                  ) : null}
                 </View>
               </View>
             );
           }}
         />
 
-        <View style={styles.composer}>
-          <TextField
+        {cfg.ADVANCED_MESSAGING_ENABLED ? (
+          <AdvancedMessageInput
+            backendMode={backendMode}
             value={text}
-            onChangeText={setText}
-            placeholder="Message"
-            right={
-              <Ionicons
-                name="send"
-                size={18}
-                color={canSend ? theme.colors.primary : theme.colors.mutedText}
-                onPress={canSend ? onSend : undefined}
-              />
-            }
+            onChange={setText}
+            onSend={onSendAdvanced}
+            disabled={sending}
+            editing={!!editingScheduled}
+            onCancelEditing={() => setEditingScheduled(null)}
           />
-          <Button title="Send" onPress={onSend} disabled={!canSend} loading={sending} />
-        </View>
+        ) : (
+          <View style={styles.composer}>
+            <TextField
+              value={text}
+              onChangeText={setText}
+              placeholder="Message"
+              right={
+                <Ionicons
+                  name="send"
+                  size={18}
+                  color={canSend ? theme.colors.primary : theme.colors.mutedText}
+                  onPress={canSend ? onSendBasic : undefined}
+                />
+              }
+            />
+            <Button title="Send" onPress={onSendBasic} disabled={!canSend} loading={sending} />
+          </View>
+        )}
       </KeyboardAvoidingView>
     </Screen>
   );
@@ -179,5 +282,20 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.bg,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
+  },
+  scheduledActions: {
+    flexDirection: "row",
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.xs,
+  },
+  actionChip: {
+    backgroundColor: theme.colors.chipBg,
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 6,
+  },
+  actionText: {
+    ...theme.typography.small,
+    color: theme.colors.text,
   },
 });

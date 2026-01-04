@@ -40,14 +40,18 @@ function editorHtml(initialHtml) {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; padding: 12px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; padding: 0; margin: 0; }
+  /* A4-ish page feel (centered) */
+  #page { max-width: 794px; min-height: 1123px; margin: 12px auto; padding: 48px; box-sizing: border-box; }
   #editor { min-height: 60vh; outline: none; }
   img { max-width: 100%; height: auto; display: block; margin: 8px 0; }
   img[data-selected="true"] { outline: 2px solid #1976d2; }
 </style>
 </head>
 <body>
-  <div id="editor" contenteditable="true">${safe}</div>
+  <div id="page">
+    <div id="editor" contenteditable="true">${safe}</div>
+  </div>
 <script>
 (function(){
   const editor = document.getElementById('editor');
