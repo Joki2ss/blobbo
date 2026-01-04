@@ -1,0 +1,25 @@
+import { auth as mockAuth } from "./mock/auth";
+import { workspaces as mockWorkspaces } from "./mock/workspaces";
+import { clients as mockClients } from "./mock/clients";
+import { chat as mockChat } from "./mock/chat";
+import { activity as mockActivity } from "./mock/activity";
+import { documents as mockDocuments } from "./mock/documents";
+import { support as mockSupport } from "./mock/support";
+
+import { cloudBackend } from "./cloud/index";
+
+export function getBackend(mode) {
+  if (mode === "CLOUD") {
+    return cloudBackend;
+  }
+  return {
+    mode: "MOCK",
+    auth: mockAuth,
+    workspaces: mockWorkspaces,
+    clients: mockClients,
+    chat: mockChat,
+    activity: mockActivity,
+    documents: mockDocuments,
+    support: mockSupport,
+  };
+}

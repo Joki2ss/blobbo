@@ -1,0 +1,174 @@
+import { getJson, setJson } from "../../storage";
+import { createId } from "../../../utils/id";
+
+const DB_KEY = "sxr_mock_db_v1";
+
+export async function loadDb() {
+  const existing = await getJson(DB_KEY, null);
+  if (existing) return existing;
+
+  const now = Date.now();
+
+  const ws1 = { id: "ws_acme", name: "Acme Ops" };
+  const ws2 = { id: "ws_beta", name: "Beta Holdings" };
+
+  const users = [
+    {
+      id: "u_admin_acme",
+      workspaceId: ws1.id,
+      role: "ADMIN",
+      fullName: "Jordan Admin",
+      email: "admin@acme.com",
+      phone: "+1 555 0100",
+      password: "password",
+    },
+    {
+      // Demo multi-tenant admin (member of multiple workspaces)
+      id: "u_admin_multi",
+      workspaceId: ws1.id,
+      role: "ADMIN",
+      fullName: "Casey Multi-Workspace",
+      email: "admin@demo.com",
+      phone: "+1 555 0999",
+      password: "password",
+    },
+    {
+      id: "u_client_acme",
+      workspaceId: ws1.id,
+      role: "CLIENT",
+      fullName: "Taylor Client",
+      email: "client@acme.com",
+      phone: "+1 555 0101",
+      password: "password",
+      clientId: "c_acme_1",
+    },
+    {
+      id: "u_admin_beta",
+      workspaceId: ws2.id,
+      role: "ADMIN",
+      fullName: "Avery Admin",
+      email: "admin@beta.com",
+      phone: "+1 555 0200",
+      password: "password",
+    },
+  ];
+
+  // Simple membership model: which workspaces a user can access.
+  // This enables an admin-only workspace switcher without mixing tenant data.
+  const memberships = [
+    { userId: "u_admin_acme", workspaceId: ws1.id },
+    { userId: "u_client_acme", workspaceId: ws1.id },
+    { userId: "u_admin_beta", workspaceId: ws2.id },
+    { userId: "u_admin_multi", workspaceId: ws1.id },
+    { userId: "u_admin_multi", workspaceId: ws2.id },
+  ];
+
+  const clients = [
+    {
+      id: "c_acme_1",
+      workspaceId: ws1.id,
+      name: "Taylor Client",
+      email: "client@acme.com",
+      phone: "+1 555 0101",
+      status: "active",
+      createdAt: now - 1000 * 60 * 60 * 24 * 7,
+    },
+    {
+      id: "c_acme_2",
+      workspaceId: ws1.id,
+      name: "Morgan Retail",
+      email: "morgan@retail.com",
+      phone: "+1 555 0133",
+      status: "active",
+      createdAt: now - 1000 * 60 * 60 * 24 * 14,
+    },
+    {
+      id: "c_beta_1",
+      workspaceId: ws2.id,
+      name: "Beta Client One",
+      email: "one@beta.com",
+      phone: "+1 555 0211",
+      status: "active",
+      createdAt: now - 1000 * 60 * 60 * 24 * 2,
+    },
+  ];
+
+  const messages = [
+    {
+      id: createId("m"),
+      workspaceId: ws1.id,
+      clientId: "c_acme_1",
+      senderType: "CLIENT",
+      senderId: "u_client_acme",
+      text: "Hi — quick question about my onboarding checklist.",
+      createdAt: now - 1000 * 60 * 55,
+      read: false,
+    },
+    {
+      id: createId("m"),
+      workspaceId: ws1.id,
+      clientId: "c_acme_1",
+      senderType: "ADMIN",
+      senderId: "u_admin_acme",
+      text: "Sure. I can help — what’s missing?",
+      createdAt: now - 1000 * 60 * 50,
+      read: true,
+    },
+  ];
+
+  const documents = [
+    {
+      id: "dr_acme_1",
+      workspaceId: ws1.id,
+      clientId: "c_acme_1",
+      templateId: "onboarding",
+      title: "Onboarding",
+      items: [
+        { id: "i1", label: "ID / Passport", done: false },
+        { id: "i2", label: "Proof of Address", done: false },
+        { id: "i3", label: "Company Registration", done: false },
+      ],
+      status: "pending",
+      createdAt: now - 1000 * 60 * 60 * 12,
+      uploads: [],
+    },
+  ];
+
+  const activity = [
+    {
+      id: createId("a"),
+      workspaceId: ws1.id,
+      clientId: "c_acme_1",
+      type: "document_request",
+      title: "Document request created",
+      detail: "Onboarding",
+      createdAt: now - 1000 * 60 * 60 * 12,
+    },
+    {
+      id: createId("a"),
+      workspaceId: ws1.id,
+      clientId: "c_acme_1",
+      type: "message",
+      title: "Client message",
+      detail: "Hi — quick question about my onboarding checklist.",
+      createdAt: now - 1000 * 60 * 55,
+    },
+  ];
+
+  const db = {
+    workspaces: [ws1, ws2],
+    users,
+    memberships,
+    clients,
+    messages,
+    documents,
+    activity,
+  };
+
+  await setJson(DB_KEY, db);
+  return db;
+}
+
+export async function saveDb(db) {
+  await setJson(DB_KEY, db);
+}
