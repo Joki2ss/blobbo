@@ -6,7 +6,7 @@ import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { getSupportRuntimeConfig } from "../../config/supportFlags";
 import {
@@ -21,6 +21,9 @@ import { isDeveloperUser } from "../../support/SupportPermissions";
 import { AdvancedMessageInput } from "../../chat/AdvancedMessageInput";
 
 export function SupportTicketDetailScreen({ navigation, route }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const { session, backendMode, developerUnlocked } = useAppState();
   const actions = useAppActions();
   const user = session?.user;
@@ -294,61 +297,63 @@ export function SupportTicketDetailScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  title: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-  },
-  muted: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 6,
-  },
-  card: {
-    marginTop: theme.spacing.md,
-  },
-  h: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
-  },
-  label: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginBottom: theme.spacing.sm,
-  },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-  },
-  switchLabel: {
-    ...theme.typography.body,
-    color: theme.colors.text,
-  },
-  msgRow: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  msgMeta: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-  },
-  msgBody: {
-    ...theme.typography.body,
-    color: theme.colors.text,
-    marginTop: 6,
-  },
-  rowButtons: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: theme.spacing.sm,
-    marginBottom: theme.spacing.md,
-  },
-});
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    title: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+    },
+    muted: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 6,
+    },
+    card: {
+      marginTop: theme.spacing.md,
+    },
+    h: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+      marginBottom: theme.spacing.sm,
+    },
+    label: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginBottom: theme.spacing.sm,
+    },
+    switchRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 8,
+    },
+    switchLabel: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+    },
+    msgRow: {
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    msgMeta: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+    },
+    msgBody: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+      marginTop: 6,
+    },
+    rowButtons: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: theme.spacing.sm,
+      marginBottom: theme.spacing.md,
+    },
+  });
+}

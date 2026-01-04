@@ -5,12 +5,14 @@ import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 
 export function AdminChangeCustomerEmailScreen({ navigation, route }) {
   const { workspace } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const clientId = route?.params?.clientId;
 
   const [linkedUser, setLinkedUser] = useState(null);
@@ -78,27 +80,30 @@ export function AdminChangeCustomerEmailScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  title: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.md,
-  },
-  card: {
-    marginBottom: theme.spacing.md,
-  },
-  section: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
-  },
-  muted: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 4,
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    title: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+      marginBottom: theme.spacing.md,
+    },
+    card: {
+      marginBottom: theme.spacing.md,
+    },
+    section: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+      marginBottom: theme.spacing.xs,
+    },
+    muted: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 4,
+    },
+  });
+}

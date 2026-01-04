@@ -6,12 +6,14 @@ import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
 import { ListRow } from "../../components/ListRow";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 
 export function NewMessageScreen({ navigation }) {
   const { workspace } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const [query, setQuery] = useState("");
   const [clientId, setClientId] = useState("");
@@ -75,27 +77,30 @@ export function NewMessageScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.text,
-  },
-  subtitle: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 6,
-    marginBottom: theme.spacing.lg,
-  },
-  card: {
-    marginBottom: theme.spacing.md,
-  },
-  section: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    title: {
+      ...theme.typography.h1,
+      color: theme.colors.text,
+    },
+    subtitle: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 6,
+      marginBottom: theme.spacing.lg,
+    },
+    card: {
+      marginBottom: theme.spacing.md,
+    },
+    section: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+      marginBottom: theme.spacing.sm,
+    },
+  });
+}

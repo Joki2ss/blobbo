@@ -3,7 +3,6 @@ import { View, Text, StyleSheet } from "react-native";
 
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
 
 export class SupportErrorBoundaryInner extends React.Component {
   constructor(props) {
@@ -24,6 +23,7 @@ export class SupportErrorBoundaryInner extends React.Component {
   }
 
   render() {
+    const styles = makeStyles(this.props.theme);
     if (!this.state.hasError) return this.props.children;
 
     return (
@@ -38,21 +38,23 @@ export class SupportErrorBoundaryInner extends React.Component {
   }
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    flex: 1,
-    padding: theme.spacing.lg,
-    justifyContent: "center",
-    backgroundColor: theme.colors.bg,
-  },
-  title: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-  },
-  muted: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: theme.spacing.sm,
-    marginBottom: theme.spacing.md,
-  },
-});
+function makeStyles(theme) {
+  return StyleSheet.create({
+    wrap: {
+      flex: 1,
+      padding: theme.spacing.lg,
+      justifyContent: "center",
+      backgroundColor: theme.colors.bg,
+    },
+    title: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+    },
+    muted: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: theme.spacing.sm,
+      marginBottom: theme.spacing.md,
+    },
+  });
+}

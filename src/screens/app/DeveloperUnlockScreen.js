@@ -1,17 +1,19 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, Alert } from "react-native";
 
 import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { isDeveloperUser } from "../../support/SupportPermissions";
 
 export function DeveloperUnlockScreen({ navigation }) {
   const { developerUnlocked, session } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const user = session?.user;
   const allowed = isDeveloperUser(user);
@@ -75,27 +77,30 @@ export function DeveloperUnlockScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  title: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.md,
-  },
-  card: {
-    marginBottom: theme.spacing.md,
-  },
-  section: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
-  },
-  muted: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 4,
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    title: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+      marginBottom: theme.spacing.md,
+    },
+    card: {
+      marginBottom: theme.spacing.md,
+    },
+    section: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+      marginBottom: theme.spacing.sm,
+    },
+    muted: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 4,
+    },
+  });
+}

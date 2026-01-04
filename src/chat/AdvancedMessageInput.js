@@ -5,7 +5,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
-import { theme } from "../theme";
+import { useTheme } from "../theme";
 
 const MAX_MEDIA = 3;
 
@@ -18,6 +18,8 @@ export function AdvancedMessageInput({
   editing,
   onCancelEditing,
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [media, setMedia] = useState([]);
   const [location, setLocation] = useState(null);
   const [showPicker, setShowPicker] = useState(false);
@@ -127,9 +129,9 @@ export function AdvancedMessageInput({
   return (
     <View style={styles.wrap}>
       <View style={styles.actionsRow}>
-        <IconBtn name="image" onPress={pickMedia} disabled={disabled || media.length >= MAX_MEDIA} />
-        <IconBtn name="location" onPress={shareLocation} disabled={disabled} />
-        <IconBtn name="calendar" onPress={openSchedule} disabled={disabled} />
+        <IconBtn theme={theme} styles={styles} name="image" onPress={pickMedia} disabled={disabled || media.length >= MAX_MEDIA} />
+        <IconBtn theme={theme} styles={styles} name="location" onPress={shareLocation} disabled={disabled} />
+        <IconBtn theme={theme} styles={styles} name="calendar" onPress={openSchedule} disabled={disabled} />
 
         <View style={{ flex: 1 }} />
         {editing ? (
@@ -211,7 +213,7 @@ export function AdvancedMessageInput({
   );
 }
 
-function IconBtn({ name, onPress, disabled }) {
+function IconBtn({ theme, styles, name, onPress, disabled }) {
   return (
     <Pressable
       onPress={onPress}
@@ -236,75 +238,78 @@ function icon(name) {
   }
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    paddingTop: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.lg,
-    backgroundColor: theme.colors.bg,
-  },
-  actionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
-  },
-  iconBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.chipBg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  input: {
-    minHeight: 44,
-    maxHeight: 140,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surface,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    ...theme.typography.body,
-    color: theme.colors.text,
-  },
-  hint: {
-    marginTop: 8,
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: theme.spacing.sm,
-    gap: theme.spacing.sm,
-  },
-  metaText: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-  },
-  metaChip: {
-    backgroundColor: theme.colors.chipBg,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 6,
-  },
-  metaChipText: {
-    ...theme.typography.small,
-    color: theme.colors.text,
-  },
-  editChip: {
-    backgroundColor: theme.colors.chipBg,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 6,
-  },
-  editText: {
-    ...theme.typography.small,
-    color: theme.colors.text,
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    wrap: {
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+      paddingTop: theme.spacing.sm,
+      paddingHorizontal: theme.spacing.lg,
+      paddingBottom: theme.spacing.lg,
+      backgroundColor: theme.colors.bg,
+    },
+    actionsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+      marginBottom: theme.spacing.sm,
+    },
+    iconBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.chipBg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    input: {
+      minHeight: 44,
+      maxHeight: 140,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.sm,
+      ...theme.typography.body,
+      color: theme.colors.text,
+    },
+    hint: {
+      marginTop: 8,
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+    },
+    metaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: theme.spacing.sm,
+      gap: theme.spacing.sm,
+    },
+    metaText: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+    },
+    metaChip: {
+      backgroundColor: theme.colors.chipBg,
+      borderRadius: theme.radius.pill,
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: 6,
+    },
+    metaChipText: {
+      ...theme.typography.small,
+      color: theme.colors.text,
+    },
+    editChip: {
+      backgroundColor: theme.colors.chipBg,
+      borderRadius: theme.radius.pill,
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: 6,
+    },
+    editText: {
+      ...theme.typography.small,
+      color: theme.colors.text,
+    },
+  });
+}

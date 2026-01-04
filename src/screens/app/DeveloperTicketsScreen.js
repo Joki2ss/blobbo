@@ -6,7 +6,7 @@ import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
 import { ListRow } from "../../components/ListRow";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { getSupportRuntimeConfig } from "../../config/supportFlags";
 import { listAllTicketsForDeveloper } from "../../support/SupportTicketsService";
@@ -17,6 +17,8 @@ const STATUS = ["All", "OPEN", "IN_PROGRESS", "CLOSED"];
 export function DeveloperTicketsScreen({ navigation }) {
   const { backendMode, session } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const cfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
 
   const user = session?.user;
@@ -121,37 +123,40 @@ export function DeveloperTicketsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  title: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-  },
-  muted: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 6,
-  },
-  card: {
-    marginTop: theme.spacing.md,
-  },
-  h: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
-  },
-  label: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginBottom: theme.spacing.sm,
-  },
-  row: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: theme.spacing.sm,
-    marginBottom: theme.spacing.md,
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    title: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+    },
+    muted: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 6,
+    },
+    card: {
+      marginTop: theme.spacing.md,
+    },
+    h: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+      marginBottom: theme.spacing.sm,
+    },
+    label: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginBottom: theme.spacing.sm,
+    },
+    row: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: theme.spacing.sm,
+      marginBottom: theme.spacing.md,
+    },
+  });
+}

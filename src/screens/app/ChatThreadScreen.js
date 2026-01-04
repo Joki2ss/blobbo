@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Screen } from "../../components/Screen";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { isAdminOrBusiness } from "../../utils/roles";
 import { formatTime } from "../../utils/date";
@@ -16,6 +16,8 @@ import { AdvancedMessageInput } from "../../chat/AdvancedMessageInput";
 export function ChatThreadScreen({ navigation, route }) {
   const { workspace, session, backendMode } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const clientId = route?.params?.clientId;
 
   const cfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
@@ -230,72 +232,75 @@ export function ChatThreadScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  list: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  row: {
-    marginBottom: theme.spacing.md,
-    flexDirection: "row",
-  },
-  rowMe: {
-    justifyContent: "flex-end",
-  },
-  rowOther: {
-    justifyContent: "flex-start",
-  },
-  bubble: {
-    maxWidth: "78%",
-    padding: theme.spacing.md,
-    borderRadius: theme.radius.lg,
-  },
-  bubbleMe: {
-    backgroundColor: theme.colors.bubbleMe,
-  },
-  bubbleOther: {
-    backgroundColor: theme.colors.bubbleOther,
-  },
-  msgText: {
-    ...theme.typography.body,
-  },
-  textMe: {
-    color: theme.colors.bubbleMeText,
-  },
-  textOther: {
-    color: theme.colors.bubbleOtherText,
-  },
-  time: {
-    marginTop: 6,
-    ...theme.typography.small,
-  },
-  timeMe: {
-    color: "rgba(255,255,255,0.85)",
-  },
-  timeOther: {
-    color: theme.colors.mutedText,
-  },
-  composer: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.sm,
-    paddingBottom: theme.spacing.lg,
-    backgroundColor: theme.colors.bg,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  scheduledActions: {
-    flexDirection: "row",
-    gap: theme.spacing.xs,
-    marginTop: theme.spacing.xs,
-  },
-  actionChip: {
-    backgroundColor: theme.colors.chipBg,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 6,
-  },
-  actionText: {
-    ...theme.typography.small,
-    color: theme.colors.text,
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    list: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    row: {
+      marginBottom: theme.spacing.md,
+      flexDirection: "row",
+    },
+    rowMe: {
+      justifyContent: "flex-end",
+    },
+    rowOther: {
+      justifyContent: "flex-start",
+    },
+    bubble: {
+      maxWidth: "78%",
+      padding: theme.spacing.md,
+      borderRadius: theme.radius.lg,
+    },
+    bubbleMe: {
+      backgroundColor: theme.colors.bubbleMe,
+    },
+    bubbleOther: {
+      backgroundColor: theme.colors.bubbleOther,
+    },
+    msgText: {
+      ...theme.typography.body,
+    },
+    textMe: {
+      color: theme.colors.bubbleMeText,
+    },
+    textOther: {
+      color: theme.colors.bubbleOtherText,
+    },
+    time: {
+      marginTop: 6,
+      ...theme.typography.small,
+    },
+    timeMe: {
+      color: theme.colors.bubbleMeText,
+    },
+    timeOther: {
+      color: theme.colors.mutedText,
+    },
+    composer: {
+      paddingHorizontal: theme.spacing.lg,
+      paddingTop: theme.spacing.sm,
+      paddingBottom: theme.spacing.lg,
+      backgroundColor: theme.colors.bg,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    scheduledActions: {
+      flexDirection: "row",
+      gap: theme.spacing.xs,
+      marginTop: theme.spacing.xs,
+    },
+    actionChip: {
+      backgroundColor: theme.colors.chipBg,
+      borderRadius: theme.radius.pill,
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: 6,
+    },
+    actionText: {
+      ...theme.typography.small,
+      color: theme.colors.text,
+    },
+  });
+}

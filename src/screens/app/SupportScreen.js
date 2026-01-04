@@ -11,7 +11,7 @@ import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { SUPPORT_EMAIL } from "../../config/support";
 import { getRecentLogs, logEvent } from "../../services/logger";
@@ -22,6 +22,9 @@ import { isAdminOrBusiness } from "../../utils/roles";
 const PRIORITIES = ["Low", "Normal", "High"];
 
 export function SupportScreen({ navigation }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const { session, workspace, backendMode, currentScreen, selectedClientId } = useAppState();
   const actions = useAppActions();
 
@@ -342,61 +345,63 @@ export function SupportScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.text,
-  },
-  subtitle: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 6,
-    marginBottom: theme.spacing.lg,
-  },
-  card: {
-    marginBottom: theme.spacing.md,
-  },
-  label: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginBottom: theme.spacing.sm,
-  },
-  row: {
-    flexDirection: "row",
-    gap: theme.spacing.sm,
-    flexWrap: "wrap",
-    marginBottom: theme.spacing.md,
-  },
-  priorityWrap: {
-    flexGrow: 1,
-    flexBasis: "30%",
-  },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-  },
-  switchLabel: {
-    ...theme.typography.body,
-    color: theme.colors.text,
-  },
-  previewTitle: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
-  },
-  muted: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 6,
-  },
-  previewBody: {
-    marginTop: theme.spacing.md,
-    ...theme.typography.body,
-    color: theme.colors.text,
-  },
-});
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    title: {
+      ...theme.typography.h1,
+      color: theme.colors.text,
+    },
+    subtitle: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 6,
+      marginBottom: theme.spacing.lg,
+    },
+    card: {
+      marginBottom: theme.spacing.md,
+    },
+    label: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginBottom: theme.spacing.sm,
+    },
+    row: {
+      flexDirection: "row",
+      gap: theme.spacing.sm,
+      flexWrap: "wrap",
+      marginBottom: theme.spacing.md,
+    },
+    priorityWrap: {
+      flexGrow: 1,
+      flexBasis: "30%",
+    },
+    switchRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 8,
+    },
+    switchLabel: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+    },
+    previewTitle: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+    },
+    muted: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 6,
+    },
+    previewBody: {
+      marginTop: theme.spacing.md,
+      ...theme.typography.body,
+      color: theme.colors.text,
+    },
+  });
+}

@@ -5,13 +5,15 @@ import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { isCustomerOrStaff } from "../../utils/roles";
 
 export function ProfileScreen({ navigation }) {
   const { session, workspace } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const user = session?.user;
 
@@ -106,33 +108,36 @@ export function ProfileScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.text,
-  },
-  subtitle: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 6,
-    marginBottom: theme.spacing.lg,
-  },
-  card: {
-    marginBottom: theme.spacing.md,
-  },
-  section: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
-  },
-  notice: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginBottom: theme.spacing.md,
-    marginTop: -4,
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    title: {
+      ...theme.typography.h1,
+      color: theme.colors.text,
+    },
+    subtitle: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 6,
+      marginBottom: theme.spacing.lg,
+    },
+    card: {
+      marginBottom: theme.spacing.md,
+    },
+    section: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+      marginBottom: theme.spacing.sm,
+    },
+    notice: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginBottom: theme.spacing.md,
+      marginTop: -4,
+    },
+  });
+}

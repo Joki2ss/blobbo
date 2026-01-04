@@ -6,7 +6,7 @@ import { Header } from "../../components/Header";
 import { Card } from "../../components/Card";
 import { ListRow } from "../../components/ListRow";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { getSupportRuntimeConfig } from "../../config/supportFlags";
 import { isDeveloperUser } from "../../support/SupportPermissions";
@@ -15,6 +15,8 @@ import { listFeedPosts, PLAN_TYPES, VISIBILITY_STATUS, updateFeedPost } from "..
 export function DeveloperFeedControlScreen({ navigation }) {
   const { backendMode, session, developerUnlocked } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const user = session?.user || null;
 
   const cfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
@@ -102,20 +104,23 @@ export function DeveloperFeedControlScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-  },
-  card: {
-    marginBottom: theme.spacing.md,
-  },
-  muted: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-  },
-  rowButtons: {
-    flexDirection: "row",
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.sm,
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+    },
+    card: {
+      marginBottom: theme.spacing.md,
+    },
+    muted: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+    },
+    rowButtons: {
+      flexDirection: "row",
+      gap: theme.spacing.sm,
+      marginTop: theme.spacing.sm,
+    },
+  });
+}

@@ -4,14 +4,17 @@ import { useAppState } from "../../store/AppStore";
 import { getSupportRuntimeConfig } from "../../config/supportFlags";
 import { logSupportEvent } from "../SupportLogger";
 import { SupportErrorBoundaryInner } from "./SupportErrorBoundary";
+import { useTheme } from "../../theme";
 
 export function SupportErrorBoundary({ children }) {
   const { backendMode, session, currentScreen } = useAppState();
   const cfg = getSupportRuntimeConfig({ backendMode });
   const user = session?.user;
+  const theme = useTheme();
 
   return (
     <SupportErrorBoundaryInner
+      theme={theme}
       onError={(error, info) => {
         if (!cfg.SUPPORT_ENABLED || !cfg.DEVELOPER_MODE) return;
         logSupportEvent({

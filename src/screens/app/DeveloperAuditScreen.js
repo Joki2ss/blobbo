@@ -5,7 +5,7 @@ import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { MiniBarChart } from "../../support/SupportUI/MiniBarChart";
 import { aggregateCharts, searchLogs } from "../../support/SupportSearch";
@@ -17,6 +17,8 @@ import { listDocumentMetadataForDeveloper } from "../../documents/DocumentsServi
 export function DeveloperAuditScreen({ navigation }) {
   const { workspace, developerUnlocked, backendMode, session } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const user = session?.user;
   const isDevEmail = isDeveloperUser(user);
@@ -194,38 +196,41 @@ export function DeveloperAuditScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  title: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
-  },
-  card: {
-    marginBottom: theme.spacing.md,
-  },
-  h: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
-  },
-  msg: {
-    marginTop: theme.spacing.sm,
-    ...theme.typography.body,
-    color: theme.colors.text,
-  },
-  muted: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 4,
-  },
-  pillsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.sm,
-    marginBottom: theme.spacing.md,
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    title: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+      marginBottom: theme.spacing.sm,
+    },
+    card: {
+      marginBottom: theme.spacing.md,
+    },
+    h: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+    },
+    msg: {
+      marginTop: theme.spacing.sm,
+      ...theme.typography.body,
+      color: theme.colors.text,
+    },
+    muted: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 4,
+    },
+    pillsRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: theme.spacing.sm,
+      marginTop: theme.spacing.sm,
+      marginBottom: theme.spacing.md,
+    },
+  });
+}

@@ -7,7 +7,7 @@ import { ClientsScreen } from "../../screens/app/ClientsScreen";
 import { ChatScreen } from "../../screens/app/ChatScreen";
 import { ActivityScreen } from "../../screens/app/ActivityScreen";
 import { SettingsScreen } from "../../screens/app/SettingsScreen";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppState } from "../../store/AppStore";
 import { getSupportRuntimeConfig } from "../../config/supportFlags";
 import { PublicFeedLazyScreen } from "../../screens/public";
@@ -17,6 +17,7 @@ const Tab = createBottomTabNavigator();
 export function TabNavigator() {
   const { backendMode } = useAppState();
   const cfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
+  const theme = useTheme();
 
   return (
     <Tab.Navigator

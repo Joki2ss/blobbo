@@ -5,12 +5,14 @@ import { Screen } from "../../components/Screen";
 import { Header } from "../../components/Header";
 import { TextField } from "../../components/TextField";
 import { ListRow } from "../../components/ListRow";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 
 export function ClientsScreen({ navigation }) {
   const { workspace } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const [query, setQuery] = useState("");
   const [clients, setClients] = useState([]);
@@ -53,11 +55,13 @@ export function ClientsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  search: {
-    paddingHorizontal: theme.spacing.lg,
-  },
-  list: {
-    flex: 1,
-  },
-});
+function makeStyles(theme) {
+  return StyleSheet.create({
+    search: {
+      paddingHorizontal: theme.spacing.lg,
+    },
+    list: {
+      flex: 1,
+    },
+  });
+}

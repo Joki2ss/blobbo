@@ -8,7 +8,7 @@ import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { getSupportRuntimeConfig } from "../../config/supportFlags";
 import { getDocumentById, updateDocument } from "../../documents/DocumentsService";
@@ -32,20 +32,25 @@ function sizeToExec(size) {
   return 7;
 }
 
-function editorHtml(initialHtml) {
+function editorHtml(initialHtml, theme) {
   const safe = String(initialHtml || "<p></p>");
+  const pageBg = theme?.colors?.surface || "#ffffff";
+  const appBg = theme?.colors?.bg || "#ffffff";
+  const text = theme?.colors?.text || "#111111";
+  const border = theme?.colors?.border || "#e5e7eb";
+  const primary = theme?.colors?.primary || "#1976d2";
   return `<!doctype html>
 <html>
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; padding: 0; margin: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; padding: 0; margin: 0; background: ${appBg}; color: ${text}; }
   /* A4-ish page feel (centered) */
-  #page { max-width: 794px; min-height: 1123px; margin: 12px auto; padding: 48px; box-sizing: border-box; }
-  #editor { min-height: 60vh; outline: none; }
+  #page { max-width: 794px; min-height: 1123px; margin: 12px auto; padding: 48px; box-sizing: border-box; background: ${pageBg}; border: 1px solid ${border}; border-radius: 12px; }
+  #editor { min-height: 60vh; outline: none; color: ${text}; }
   img { max-width: 100%; height: auto; display: block; margin: 8px 0; }
-  img[data-selected="true"] { outline: 2px solid #1976d2; }
+  img[data-selected="true"] { outline: 2px solid ${primary}; }
 </style>
 </head>
 <body>
@@ -134,6 +139,9 @@ function jsMsg(obj) {
 }
 
 export function DocumentEditorScreen({ navigation, route }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   const { session, backendMode } = useAppState();
   const actions = useAppActions();
   const user = session?.user;
@@ -395,7 +403,7 @@ export function DocumentEditorScreen({ navigation, route }) {
           <WebView
             ref={webRef}
             originWhitelist={["*"]}
-            source={{ html: editorHtml(html) }}
+            source={{ html: editorHtml(html, theme) }}
             javaScriptEnabled
             domStorageEnabled
             onMessage={(e) => {
@@ -438,49 +446,51 @@ export function DocumentEditorScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  title: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-  },
-  muted: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 6,
-  },
-  card: {
-    marginTop: theme.spacing.md,
-  },
-  editorCard: {
-    marginTop: theme.spacing.md,
-    padding: 0,
-    overflow: "hidden",
-  },
-  toolbarRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.sm,
-  },
-  label: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: theme.spacing.md,
-  },
-  exportRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.sm,
-    paddingVertical: theme.spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  exportTitle: {
-    ...theme.typography.body,
-    color: theme.colors.text,
-  },
-});
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    title: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+    },
+    muted: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 6,
+    },
+    card: {
+      marginTop: theme.spacing.md,
+    },
+    editorCard: {
+      marginTop: theme.spacing.md,
+      padding: 0,
+      overflow: "hidden",
+    },
+    toolbarRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: theme.spacing.sm,
+      marginTop: theme.spacing.sm,
+    },
+    label: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: theme.spacing.md,
+    },
+    exportRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing.sm,
+      paddingVertical: theme.spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+    },
+    exportTitle: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+    },
+  });
+}

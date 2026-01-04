@@ -6,12 +6,14 @@ import { Screen } from "../../components/Screen";
 import { Header } from "../../components/Header";
 import { ListRow } from "../../components/ListRow";
 import { Badge } from "../../components/Badge";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 
 export function ChatScreen({ navigation }) {
   const { workspace } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const [threads, setThreads] = useState([]);
   const [clientsById, setClientsById] = useState({});
@@ -77,21 +79,22 @@ export function ChatScreen({ navigation }) {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  empty: {
-    padding: theme.spacing.xl,
-  },
-  emptyText: {
-    ...theme.typography.body,
-    color: theme.colors.mutedText,
-  },
-  newBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.chipBg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+function makeStyles(theme) {
+  return StyleSheet.create({
+    empty: {
+      padding: theme.spacing.xl,
+    },
+    emptyText: {
+      ...theme.typography.body,
+      color: theme.colors.mutedText,
+    },
+    newBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.chipBg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+  });
+}

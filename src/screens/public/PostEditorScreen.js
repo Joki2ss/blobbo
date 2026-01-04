@@ -7,7 +7,7 @@ import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { getSupportRuntimeConfig } from "../../config/supportFlags";
 import { isAdminOrBusiness } from "../../utils/roles";
@@ -28,6 +28,8 @@ const CATEGORY_PRESETS = ["lawyer", "accountant", "doctor", "artisan", "consulta
 export function PostEditorScreen({ navigation, route }) {
   const { session, backendMode, developerUnlocked } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const user = session?.user || null;
 
   const cfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
@@ -342,95 +344,98 @@ export function PostEditorScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  titleTop: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-  },
-  muted: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 6,
-  },
-  card: {
-    marginTop: theme.spacing.md,
-  },
-  label: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginBottom: theme.spacing.sm,
-  },
-  keywordRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: theme.spacing.sm,
-  },
-  iconBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.chipBg,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 18,
-  },
-  chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: theme.spacing.xs,
-    marginTop: -theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
-  },
-  chip: {
-    backgroundColor: theme.colors.chipBg,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 7,
-  },
-  chipText: {
-    ...theme.typography.small,
-    color: theme.colors.text,
-  },
-  planRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: theme.spacing.xs,
-  },
-  planChip: {
-    backgroundColor: theme.colors.chipBg,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: 8,
-  },
-  planChipOn: {
-    backgroundColor: theme.colors.primary,
-  },
-  planText: {
-    ...theme.typography.small,
-    color: theme.colors.text,
-  },
-  planTextOn: {
-    color: theme.colors.primaryText,
-  },
-  presetRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: theme.spacing.xs,
-    marginBottom: theme.spacing.md,
-    marginTop: -theme.spacing.sm,
-  },
-  presetChip: {
-    backgroundColor: theme.colors.chipBg,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 6,
-  },
-  presetText: {
-    ...theme.typography.small,
-    color: theme.colors.text,
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    titleTop: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+    },
+    muted: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 6,
+    },
+    card: {
+      marginTop: theme.spacing.md,
+    },
+    label: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginBottom: theme.spacing.sm,
+    },
+    keywordRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: theme.spacing.sm,
+    },
+    iconBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.chipBg,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 18,
+    },
+    chips: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: theme.spacing.xs,
+      marginTop: -theme.spacing.sm,
+      marginBottom: theme.spacing.sm,
+    },
+    chip: {
+      backgroundColor: theme.colors.chipBg,
+      borderRadius: theme.radius.pill,
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: 7,
+    },
+    chipText: {
+      ...theme.typography.small,
+      color: theme.colors.text,
+    },
+    planRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: theme.spacing.xs,
+    },
+    planChip: {
+      backgroundColor: theme.colors.chipBg,
+      borderRadius: theme.radius.pill,
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: 8,
+    },
+    planChipOn: {
+      backgroundColor: theme.colors.primary,
+    },
+    planText: {
+      ...theme.typography.small,
+      color: theme.colors.text,
+    },
+    planTextOn: {
+      color: theme.colors.primaryText,
+    },
+    presetRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: theme.spacing.xs,
+      marginBottom: theme.spacing.md,
+      marginTop: -theme.spacing.sm,
+    },
+    presetChip: {
+      backgroundColor: theme.colors.chipBg,
+      borderRadius: theme.radius.pill,
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: 6,
+    },
+    presetText: {
+      ...theme.typography.small,
+      color: theme.colors.text,
+    },
+  });
+}

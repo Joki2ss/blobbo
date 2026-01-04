@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { theme } from "../theme";
+import { useTheme } from "../theme";
 
 export function Badge({ count }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   if (!count) return null;
   return (
     <View style={styles.badge}>
@@ -11,19 +13,21 @@ export function Badge({ count }) {
   );
 }
 
-const styles = StyleSheet.create({
-  badge: {
-    minWidth: 22,
-    height: 22,
-    paddingHorizontal: 6,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.danger,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  text: {
-    color: theme.colors.primaryText,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-});
+function makeStyles(theme) {
+  return StyleSheet.create({
+    badge: {
+      minWidth: 22,
+      height: 22,
+      paddingHorizontal: 6,
+      borderRadius: theme.radius.pill,
+      backgroundColor: theme.colors.danger,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    text: {
+      color: theme.colors.primaryText,
+      fontSize: 12,
+      fontWeight: "700",
+    },
+  });
+}

@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { SafeAreaView, View, StyleSheet } from "react-native";
-import { theme } from "../theme";
+import { useTheme } from "../theme";
 
 export function Screen({ children, style }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <SafeAreaView style={[styles.safe, style]}>
       <View style={styles.inner}>{children}</View>
@@ -10,12 +12,14 @@ export function Screen({ children, style }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: theme.colors.bg,
-  },
-  inner: {
-    flex: 1,
-  },
-});
+function makeStyles(theme) {
+  return StyleSheet.create({
+    safe: {
+      flex: 1,
+      backgroundColor: theme.colors.bg,
+    },
+    inner: {
+      flex: 1,
+    },
+  });
+}

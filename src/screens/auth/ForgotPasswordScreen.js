@@ -1,15 +1,17 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Alert } from "react-native";
 
 import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions } from "../../store/AppStore";
 
 export function ForgotPasswordScreen({ navigation }) {
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [email, setEmail] = useState("admin@acme.com");
   const [loading, setLoading] = useState(false);
 
@@ -44,32 +46,35 @@ export function ForgotPasswordScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: theme.spacing.xl,
-    paddingTop: theme.spacing.xl,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.text,
-  },
-  subtitle: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 6,
-    marginBottom: theme.spacing.lg,
-  },
-  card: {
-    padding: theme.spacing.xl,
-  },
-  links: {
-    marginTop: theme.spacing.md,
-    alignItems: "center",
-  },
-  link: {
-    color: theme.colors.primary,
-    ...theme.typography.small,
-    fontWeight: "700",
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      paddingHorizontal: theme.spacing.xl,
+      paddingTop: theme.spacing.xl,
+    },
+    title: {
+      ...theme.typography.h1,
+      color: theme.colors.text,
+    },
+    subtitle: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 6,
+      marginBottom: theme.spacing.lg,
+    },
+    card: {
+      padding: theme.spacing.xl,
+    },
+    links: {
+      marginTop: theme.spacing.md,
+      alignItems: "center",
+    },
+    link: {
+      color: theme.colors.primary,
+      ...theme.typography.small,
+      fontWeight: "700",
+    },
+  });
+}

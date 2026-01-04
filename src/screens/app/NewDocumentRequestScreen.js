@@ -6,13 +6,15 @@ import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { DOCUMENT_TEMPLATES } from "../../data/templates";
 
 export function NewDocumentRequestScreen({ navigation, route }) {
   const { workspace, backendMode } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const routeClientId = route?.params?.clientId;
 
@@ -117,53 +119,56 @@ export function NewDocumentRequestScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  title: {
-    ...theme.typography.h1,
-    color: theme.colors.text,
-  },
-  subtitle: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 6,
-    marginBottom: theme.spacing.lg,
-  },
-  card: {
-    marginTop: theme.spacing.sm,
-  },
-  label: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginBottom: theme.spacing.xs,
-  },
-  row: {
-    flexDirection: "row",
-    gap: theme.spacing.sm,
-    flexWrap: "wrap",
-    marginBottom: theme.spacing.md,
-  },
-  pill: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.pill,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  pillActive: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.chipBg,
-  },
-  pillText: {
-    ...theme.typography.small,
-    color: theme.colors.text,
-    fontWeight: "700",
-  },
-  pillTextActive: {
-    color: theme.colors.primary,
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    title: {
+      ...theme.typography.h1,
+      color: theme.colors.text,
+    },
+    subtitle: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 6,
+      marginBottom: theme.spacing.lg,
+    },
+    card: {
+      marginTop: theme.spacing.sm,
+    },
+    label: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginBottom: theme.spacing.xs,
+    },
+    row: {
+      flexDirection: "row",
+      gap: theme.spacing.sm,
+      flexWrap: "wrap",
+      marginBottom: theme.spacing.md,
+    },
+    pill: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+      borderRadius: theme.radius.pill,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+    pillActive: {
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.colors.chipBg,
+    },
+    pillText: {
+      ...theme.typography.small,
+      color: theme.colors.text,
+      fontWeight: "700",
+    },
+    pillTextActive: {
+      color: theme.colors.primary,
+    },
+  });
+}

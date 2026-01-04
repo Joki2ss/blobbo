@@ -6,7 +6,7 @@ import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
 import { Chip } from "../../components/Chip";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { formatDateTime } from "../../utils/date";
 import { isAdminOrBusiness } from "../../utils/roles";
@@ -14,6 +14,8 @@ import { isAdminOrBusiness } from "../../utils/roles";
 export function ClientDetailScreen({ navigation, route }) {
   const { workspace, session } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const clientId = route?.params?.clientId;
 
   const [client, setClient] = useState(null);
@@ -140,54 +142,57 @@ export function ClientDetailScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-  },
-  card: {
-    marginBottom: theme.spacing.md,
-  },
-  name: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-  },
-  muted: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 4,
-  },
-  row: {
-    flexDirection: "row",
-    marginTop: theme.spacing.md,
-  },
-  section: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
-    marginTop: theme.spacing.lg,
-    marginBottom: theme.spacing.sm,
-  },
-  docRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  docTitle: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
-  },
-  checkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-  checkText: {
-    marginLeft: theme.spacing.sm,
-    ...theme.typography.body,
-    color: theme.colors.text,
-  },
-  checkDone: {
-    color: theme.colors.mutedText,
-    textDecorationLine: "line-through",
-  },
-});
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    card: {
+      marginBottom: theme.spacing.md,
+    },
+    name: {
+      ...theme.typography.h2,
+      color: theme.colors.text,
+    },
+    muted: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 4,
+    },
+    row: {
+      flexDirection: "row",
+      marginTop: theme.spacing.md,
+    },
+    section: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+      marginTop: theme.spacing.lg,
+      marginBottom: theme.spacing.sm,
+    },
+    docRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    docTitle: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+    },
+    checkRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 8,
+    },
+    checkText: {
+      marginLeft: theme.spacing.sm,
+      ...theme.typography.body,
+      color: theme.colors.text,
+    },
+    checkDone: {
+      color: theme.colors.mutedText,
+      textDecorationLine: "line-through",
+    },
+  });
+}

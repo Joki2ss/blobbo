@@ -5,15 +5,17 @@ import { Screen } from "../../components/Screen";
 import { Header } from "../../components/Header";
 import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
-import { theme } from "../../theme";
+import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { getSupportRuntimeConfig } from "../../config/supportFlags";
 import { isDeveloperUser } from "../../support/SupportPermissions";
 import { isAdminOrBusiness } from "../../utils/roles";
 
 export function SettingsScreen({ navigation }) {
-  const { session, workspace, backendMode, developerUnlocked } = useAppState();
+  const { session, workspace, backendMode, developerUnlocked, themeMode } = useAppState();
   const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const [allowedWorkspaces, setAllowedWorkspaces] = useState([]);
 
@@ -45,6 +47,26 @@ export function SettingsScreen({ navigation }) {
     <Screen>
       <Header title="Settings" subtitle={subtitle} />
       <View style={styles.content}>
+        <Card style={styles.card}>
+          <Text style={styles.title}>Appearance</Text>
+          <Text style={styles.muted}>Theme (colors only)</Text>
+
+          <View style={styles.row}>
+            <Pressable
+              onPress={() => actions.setThemeMode("light")}
+              style={[styles.pill, themeMode === "light" ? styles.pillActive : null]}
+            >
+              <Text style={[styles.pillText, themeMode === "light" ? styles.pillTextActive : null]}>LIGHT</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => actions.setThemeMode("dark")}
+              style={[styles.pill, themeMode === "dark" ? styles.pillActive : null]}
+            >
+              <Text style={[styles.pillText, themeMode === "dark" ? styles.pillTextActive : null]}>DARK</Text>
+            </Pressable>
+          </View>
+        </Card>
+
         <Card style={styles.card}>
           <Text style={styles.title}>Account</Text>
           <Text style={styles.muted}>{user?.fullName}</Text>
@@ -163,53 +185,56 @@ export function SettingsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-    flex: 1,
-  },
-  card: {
-    marginBottom: theme.spacing.md,
-  },
-  title: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
-  },
-  muted: {
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    marginTop: 4,
-  },
-  row: {
-    flexDirection: "row",
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.md,
-  },
-  pill: {
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.pill,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  pillActive: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.chipBg,
-  },
-  pillText: {
-    ...theme.typography.small,
-    color: theme.colors.text,
-    fontWeight: "700",
-  },
-  pillTextActive: {
-    color: theme.colors.primary,
-  },
-  footer: {
-    marginTop: theme.spacing.xl,
-    ...theme.typography.small,
-    color: theme.colors.mutedText,
-    textAlign: "center",
-  },
-});
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+      flex: 1,
+    },
+    card: {
+      marginBottom: theme.spacing.md,
+    },
+    title: {
+      ...theme.typography.h3,
+      color: theme.colors.text,
+    },
+    muted: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginTop: 4,
+    },
+    row: {
+      flexDirection: "row",
+      gap: theme.spacing.sm,
+      marginTop: theme.spacing.md,
+      flexWrap: "wrap",
+    },
+    pill: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+      borderRadius: theme.radius.pill,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+    pillActive: {
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.colors.chipBg,
+    },
+    pillText: {
+      ...theme.typography.small,
+      color: theme.colors.text,
+      fontWeight: "700",
+    },
+    pillTextActive: {
+      color: theme.colors.primary,
+    },
+    footer: {
+      marginTop: theme.spacing.xl,
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      textAlign: "center",
+    },
+  });
+}

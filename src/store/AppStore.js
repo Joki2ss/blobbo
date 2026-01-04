@@ -22,6 +22,7 @@ const initialState = {
   session: null, // { user }
   workspace: null, // { id, name }
   backendMode: "MOCK",
+  themeMode: "dark", // 'light' | 'dark' | 'system'
   selectedClientId: null,
   currentScreen: "",
   developerUnlocked: false,
@@ -37,6 +38,8 @@ function reducer(state, action) {
       return { ...state, workspace: action.workspace, selectedClientId: null };
     case "SET_BACKEND_MODE":
       return { ...state, backendMode: action.mode };
+    case "SET_THEME_MODE":
+      return { ...state, themeMode: action.mode };
     case "SET_SELECTED_CLIENT":
       return { ...state, selectedClientId: action.clientId };
     case "SET_CURRENT_SCREEN":
@@ -72,6 +75,7 @@ export function AppProviders({ children }) {
           session: session ? { user: sessionUser } : null,
           workspace: prefs?.workspace || null,
           backendMode: prefs?.backendMode || "MOCK",
+          themeMode: prefs?.themeMode || "dark",
           selectedClientId: prefs?.selectedClientId || null,
           developerUnlocked: !!devActive,
         },
@@ -89,11 +93,12 @@ export function AppProviders({ children }) {
     (async () => {
       await setJson(PREFS_KEY, {
         backendMode: state.backendMode,
+        themeMode: state.themeMode,
         workspace: state.workspace,
         selectedClientId: state.selectedClientId,
       });
     })();
-  }, [state.hydrated, state.backendMode, state.workspace, state.selectedClientId]);
+  }, [state.hydrated, state.backendMode, state.themeMode, state.workspace, state.selectedClientId]);
 
   const backend = useMemo(() => getBackend(state.backendMode), [state.backendMode]);
 
@@ -174,8 +179,18 @@ export function AppProviders({ children }) {
         return session;
       },
 
-      async register({ workspaceId, role, fullName, email, phone, password }) {
-        const user = await backend.auth.register({ workspaceId, role, fullName, email, phone, password });
+      async register({ workspaceId, role, fullName, email, phone, password, firstName, displayName, professionalTitle }) {
+        const user = await backend.auth.register({
+          workspaceId,
+          role,
+          fullName,
+          email,
+          phone,
+          password,
+          firstName,
+          displayName,
+          professionalTitle,
+        });
         const allowed = await backend.workspaces.listForUser({ userId: user.id });
         const ws = allowed[0] || (await backend.workspaces.getById({ workspaceId: user.workspaceId }));
 
@@ -208,6 +223,10 @@ export function AppProviders({ children }) {
         dispatch({ type: "SET_WORKSPACE", workspace: next });
         logEvent("workspace_switch", { workspaceId: next.id });
         return next;
+      },
+
+      setThemeMode(mode) {
+        dispatch({ type: "SET_THEME_MODE", mode });
       },
 
       async updateMyProfile(updates) {
