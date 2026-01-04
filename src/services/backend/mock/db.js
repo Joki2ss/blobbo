@@ -20,6 +20,7 @@ export async function loadDb() {
       fullName: "Jordan Admin",
       email: "admin@acme.com",
       phone: "+1 555 0100",
+      photoUri: "",
       password: "password",
     },
     {
@@ -30,6 +31,7 @@ export async function loadDb() {
       fullName: "Casey Multi-Workspace",
       email: "admin@demo.com",
       phone: "+1 555 0999",
+      photoUri: "",
       password: "password",
     },
     {
@@ -39,6 +41,7 @@ export async function loadDb() {
       fullName: "Taylor Client",
       email: "client@acme.com",
       phone: "+1 555 0101",
+      photoUri: "",
       password: "password",
       clientId: "c_acme_1",
     },
@@ -49,6 +52,7 @@ export async function loadDb() {
       fullName: "Avery Admin",
       email: "admin@beta.com",
       phone: "+1 555 0200",
+      photoUri: "",
       password: "password",
     },
   ];
@@ -163,6 +167,8 @@ export async function loadDb() {
     messages,
     documents,
     activity,
+    supportRequests: [],
+    audit: [],
   };
 
   await setJson(DB_KEY, db);

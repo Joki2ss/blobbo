@@ -76,4 +76,20 @@ export const cloudBackend = {
       throw notConfigured();
     },
   },
+  users: {
+    async getById() {
+      throw notConfigured();
+    },
+    async getByClientId() {
+      throw notConfigured();
+    },
+    async updateProfile() {
+      throw notConfigured();
+    },
+  },
+  audit: {
+    async list() {
+      throw notConfigured();
+    },
+  },
 };

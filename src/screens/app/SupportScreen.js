@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Switch, Alert, Platform, Linking } from "react-native";
 import * as MailComposer from "expo-mail-composer";
 import * as Location from "expo-location";
@@ -15,12 +15,19 @@ import { theme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { SUPPORT_EMAIL } from "../../config/support";
 import { getRecentLogs, logEvent } from "../../services/logger";
+import { getSupportRuntimeConfig } from "../../config/supportFlags";
+import { getConsent, getDefaultConsentText, revokeConsent, setConsent } from "../../support/SupportConsent";
+import { isAdminOrBusiness } from "../../utils/roles";
 
 const PRIORITIES = ["Low", "Normal", "High"];
 
 export function SupportScreen({ navigation }) {
   const { session, workspace, backendMode, currentScreen, selectedClientId } = useAppState();
   const actions = useAppActions();
+
+  const supportCfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
+  const user = session?.user;
+  const isAdmin = isAdminOrBusiness(user?.role);
 
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
@@ -31,6 +38,28 @@ export function SupportScreen({ navigation }) {
   const [includeDiagnostics, setIncludeDiagnostics] = useState(false);
   const [sending, setSending] = useState(false);
 
+  const [consentEnabled, setConsentEnabled] = useState(false);
+  const [consentSecurity, setConsentSecurity] = useState(true);
+  const [consentTech, setConsentTech] = useState(true);
+  const [consentPayment, setConsentPayment] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!isAdmin || !user?.id) return;
+      const c = await actions.safeCall(() => getConsent(user.id), { title: "Consent" });
+      if (!mounted || !c) return;
+      setConsentEnabled(!!c.consentGiven);
+      const scopes = Array.isArray(c.consentScope) ? c.consentScope : [];
+      setConsentSecurity(scopes.includes("SECURITY_LOGS"));
+      setConsentTech(scopes.includes("TECH_LOGS"));
+      setConsentPayment(scopes.includes("PAYMENT_LOGS"));
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [isAdmin, user?.id]);
+
   const canSend = useMemo(() => subject.trim() && description.trim(), [subject, description]);
 
   const emailSubject = useMemo(() => {
@@ -39,8 +68,7 @@ export function SupportScreen({ navigation }) {
   }, [workspace?.id, priority]);
 
   async function buildReport() {
-    const user = session?.user;
-
+    
     let locationBlock = "Location not requested";
     if (includeLocation) {
       try {
@@ -155,6 +183,45 @@ export function SupportScreen({ navigation }) {
     return report;
   }
 
+  async function saveConsent(nextEnabled) {
+    if (!isAdmin || !user?.id) return;
+    if (!supportCfg.SUPPORT_ENABLED) {
+      Alert.alert("Support", "Support features are disabled in this mode.");
+      return;
+    }
+
+    if (!nextEnabled) {
+      await actions.safeCall(() => revokeConsent(user.id, user.email), { title: "Consent" });
+      setConsentEnabled(false);
+      return;
+    }
+
+    const scope = [
+      consentSecurity ? "SECURITY_LOGS" : null,
+      consentTech ? "TECH_LOGS" : null,
+      consentPayment ? "PAYMENT_LOGS" : null,
+    ].filter(Boolean);
+
+    if (scope.length === 0) {
+      Alert.alert("Consent", "Select at least one scope.");
+      return;
+    }
+
+    await actions.safeCall(
+      () =>
+        setConsent({
+          adminId: user.id,
+          adminEmail: user.email,
+          consentGiven: true,
+          consentScope: scope,
+          consentText: getDefaultConsentText(),
+        }),
+      { title: "Consent" }
+    );
+
+    setConsentEnabled(true);
+  }
+
   async function sendEmail() {
     if (!canSend) return;
     setSending(true);
@@ -228,6 +295,36 @@ export function SupportScreen({ navigation }) {
             <Switch value={includeDiagnostics} onValueChange={setIncludeDiagnostics} />
           </View>
         </Card>
+
+        {isAdmin ? (
+          <Card style={styles.card}>
+            <Text style={styles.previewTitle}>Support consent (admin)</Text>
+            <Text style={styles.muted}>Required before developer can view your logs. Read-only access.</Text>
+
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Consent enabled</Text>
+              <Switch value={consentEnabled} onValueChange={(v) => saveConsent(v)} />
+            </View>
+
+            <Text style={styles.label}>Scopes</Text>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Security logs</Text>
+              <Switch value={consentSecurity} onValueChange={setConsentSecurity} disabled={consentEnabled} />
+            </View>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Technical logs</Text>
+              <Switch value={consentTech} onValueChange={setConsentTech} disabled={consentEnabled} />
+            </View>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Payment logs</Text>
+              <Switch value={consentPayment} onValueChange={setConsentPayment} disabled={consentEnabled} />
+            </View>
+
+            {!supportCfg.SUPPORT_ENABLED ? (
+              <Text style={styles.muted}>Support features are disabled in this backend mode.</Text>
+            ) : null}
+          </Card>
+        ) : null}
 
         <Card style={styles.card}>
           <Text style={styles.previewTitle}>Preview</Text>

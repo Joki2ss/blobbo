@@ -5,6 +5,8 @@ import { chat as mockChat } from "./mock/chat";
 import { activity as mockActivity } from "./mock/activity";
 import { documents as mockDocuments } from "./mock/documents";
 import { support as mockSupport } from "./mock/support";
+import { users as mockUsers } from "./mock/users";
+import { audit as mockAudit } from "./mock/audit";
 
 import { cloudBackend } from "./cloud/index";
 
@@ -21,5 +23,7 @@ export function getBackend(mode) {
     activity: mockActivity,
     documents: mockDocuments,
     support: mockSupport,
+    users: mockUsers,
+    audit: mockAudit,
   };
 }

@@ -7,9 +7,12 @@ import { Card } from "../../components/Card";
 import { Button } from "../../components/Button";
 import { theme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
+import { getSupportRuntimeConfig } from "../../config/supportFlags";
+import { isDeveloperUser } from "../../support/SupportPermissions";
+import { isAdminOrBusiness } from "../../utils/roles";
 
 export function SettingsScreen({ navigation }) {
-  const { session, workspace, backendMode } = useAppState();
+  const { session, workspace, backendMode, developerUnlocked } = useAppState();
   const actions = useAppActions();
 
   const [allowedWorkspaces, setAllowedWorkspaces] = useState([]);
@@ -20,6 +23,8 @@ export function SettingsScreen({ navigation }) {
   }, [workspace, backendMode]);
 
   const user = session?.user;
+  const supportCfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
+  const isDevEmail = useMemo(() => isDeveloperUser(user), [user?.email]);
 
   useEffect(() => {
     let mounted = true;
@@ -45,9 +50,19 @@ export function SettingsScreen({ navigation }) {
           <Text style={styles.muted}>{user?.fullName}</Text>
           <Text style={styles.muted}>{user?.email}</Text>
           <Text style={styles.muted}>{user?.role} • {user?.id}</Text>
+
+          <View style={{ height: theme.spacing.md }} />
+          <Button title="Profile" variant="secondary" onPress={() => navigation.navigate("Profile")} />
+
+          {supportCfg.DOCUMENT_EDITOR_ENABLED && isAdminOrBusiness(user?.role) ? (
+            <>
+              <View style={{ height: theme.spacing.sm }} />
+              <Button title="Documents" variant="secondary" onPress={() => navigation.navigate("Documents")} />
+            </>
+          ) : null}
         </Card>
 
-        {user?.role === "ADMIN" && allowedWorkspaces.length > 1 ? (
+        {isAdminOrBusiness(user?.role) && allowedWorkspaces.length > 1 ? (
           <Card style={styles.card}>
             <Text style={styles.title}>Workspace</Text>
             <Text style={styles.muted}>Switch workspace (demo)</Text>
@@ -74,6 +89,12 @@ export function SettingsScreen({ navigation }) {
           <Text style={styles.title}>Support</Text>
           <View style={{ height: theme.spacing.md }} />
           <Button title="Ask for support" onPress={() => navigation.navigate("Support")} />
+          {supportCfg.SUPPORT_TICKETS_ENABLED ? (
+            <>
+              <View style={{ height: theme.spacing.sm }} />
+              <Button title="Support tickets" variant="secondary" onPress={() => navigation.navigate("SupportTickets")} />
+            </>
+          ) : null}
         </Card>
 
         <Card style={styles.card}>
@@ -102,9 +123,41 @@ export function SettingsScreen({ navigation }) {
           </View>
         </Card>
 
+        {isDevEmail ? (
+          <Card style={styles.card}>
+            <Text style={styles.title}>Developer tools</Text>
+            <View style={{ height: theme.spacing.md }} />
+            {developerUnlocked ? (
+              <>
+                <Button title="Support & logs" variant="secondary" onPress={() => navigation.navigate("DeveloperAudit")} />
+                <View style={{ height: theme.spacing.sm }} />
+                {supportCfg.SUPPORT_TICKETS_ENABLED ? (
+                  <>
+                    <Button title="Tickets (dev)" variant="secondary" onPress={() => navigation.navigate("DeveloperTickets")} />
+                    <View style={{ height: theme.spacing.sm }} />
+                  </>
+                ) : null}
+                <Button title="Lock developer tools" variant="secondary" onPress={() => actions.lockDeveloperTools()} />
+              </>
+            ) : (
+              <Button title="Unlock developer tools" variant="secondary" onPress={() => navigation.navigate("DeveloperUnlock")} />
+            )}
+            <View style={{ height: theme.spacing.sm }} />
+          </Card>
+        ) : null}
+
         <Button title="Logout" variant="secondary" onPress={() => actions.logout()} />
 
-        <Text style={styles.footer}>© SM Industries (/ NeoGrafiks) 2026</Text>
+        <Pressable
+          onLongPress={() => {
+            if (!supportCfg.LONG_PRESS_ENABLED) return;
+            if (!isDevEmail) return;
+            navigation.navigate("DeveloperUnlock");
+          }}
+          delayLongPress={900}
+        >
+          <Text style={styles.footer}>© SM Industries (/ NeoGrafiks) 2026</Text>
+        </Pressable>
       </View>
     </Screen>
   );

@@ -4,6 +4,15 @@ import { Alert } from "react-native";
 import { getJson, setJson, remove } from "../services/storage";
 import { getBackend } from "../services/backend";
 import { logEvent } from "../services/logger";
+import { getSupportRuntimeConfig } from "../config/supportFlags";
+import {
+  clearDeveloperSession,
+  isDeveloperSessionActive,
+  isDeveloperUser,
+  setDeveloperSessionVerified,
+  verifyDeveloperCode,
+} from "../support/SupportPermissions";
+import { logSupportEvent } from "../support/SupportLogger";
 
 const SESSION_KEY = "sxr_session_v1";
 const PREFS_KEY = "sxr_prefs_v1";
@@ -15,6 +24,7 @@ const initialState = {
   backendMode: "MOCK",
   selectedClientId: null,
   currentScreen: "",
+  developerUnlocked: false,
 };
 
 function reducer(state, action) {
@@ -31,6 +41,8 @@ function reducer(state, action) {
       return { ...state, selectedClientId: action.clientId };
     case "SET_CURRENT_SCREEN":
       return { ...state, currentScreen: action.screen };
+    case "SET_DEVELOPER_UNLOCKED":
+      return { ...state, developerUnlocked: action.value };
     case "LOGOUT":
       return { ...state, session: null, workspace: null, selectedClientId: null };
     default:
@@ -50,14 +62,18 @@ export function AppProviders({ children }) {
       const session = await getJson(SESSION_KEY, null);
       const prefs = await getJson(PREFS_KEY, null);
 
+      const sessionUser = session ? session.user : null;
+      const devActive = await isDeveloperSessionActive(sessionUser);
+
       if (!mounted) return;
       dispatch({
         type: "HYDRATE",
         payload: {
-          session: session ? { user: session.user } : null,
+          session: session ? { user: sessionUser } : null,
           workspace: prefs?.workspace || null,
           backendMode: prefs?.backendMode || "MOCK",
           selectedClientId: prefs?.selectedClientId || null,
+          developerUnlocked: !!devActive,
         },
       });
 
@@ -101,6 +117,13 @@ export function AppProviders({ children }) {
   }, [state.hydrated, state.session?.user?.id, state.backendMode]);
 
   const actions = useMemo(() => {
+    const supportCfg = getSupportRuntimeConfig({ backendMode: state.backendMode });
+
+    async function maybeLog(entry) {
+      if (!supportCfg.SUPPORT_ENABLED || !supportCfg.DEVELOPER_MODE) return;
+      await logSupportEvent(entry);
+    }
+
     return {
       backend,
 
@@ -113,7 +136,20 @@ export function AppProviders({ children }) {
       },
 
       async login({ email, password }) {
-        const user = await backend.auth.login({ email, password });
+        let user;
+        try {
+          user = await backend.auth.login({ email, password });
+        } catch (e) {
+          await maybeLog({
+            category: "Security",
+            subCategory: "AUTH_LOGIN_FAIL",
+            severity: "WARN",
+            message: "Login failed",
+            payload: { email },
+          });
+          throw e;
+        }
+
         const allowed = await backend.workspaces.listForUser({ userId: user.id });
         const ws = allowed[0] || (await backend.workspaces.getById({ workspaceId: user.workspaceId }));
 
@@ -122,6 +158,17 @@ export function AppProviders({ children }) {
 
         dispatch({ type: "SET_SESSION", session });
         dispatch({ type: "SET_WORKSPACE", workspace: ws });
+
+        dispatch({ type: "SET_DEVELOPER_UNLOCKED", value: await isDeveloperSessionActive(user) });
+
+        await maybeLog({
+          category: "Security",
+          subCategory: "AUTH_LOGIN_SUCCESS",
+          severity: "INFO",
+          message: "Login success",
+          actorUserId: user.id,
+          actorRole: user.role,
+        });
 
         logEvent("auth_login", { userId: user.id, role: user.role, workspaceId: user.workspaceId });
         return session;
@@ -136,6 +183,17 @@ export function AppProviders({ children }) {
         await setJson(SESSION_KEY, session);
         dispatch({ type: "SET_SESSION", session });
         dispatch({ type: "SET_WORKSPACE", workspace: ws });
+
+        dispatch({ type: "SET_DEVELOPER_UNLOCKED", value: await isDeveloperSessionActive(user) });
+
+        await maybeLog({
+          category: "Security",
+          subCategory: "AUTH_REGISTER",
+          severity: "INFO",
+          message: "Register success",
+          actorUserId: user.id,
+          actorRole: user.role,
+        });
 
         logEvent("auth_register", { userId: user.id, role: user.role, workspaceId: user.workspaceId });
         return session;
@@ -152,19 +210,130 @@ export function AppProviders({ children }) {
         return next;
       },
 
+      async updateMyProfile(updates) {
+        const workspaceId = state.workspace?.id;
+        const actorId = state.session?.user?.id;
+        if (!workspaceId || !actorId) throw new Error("Not signed in");
+
+        const user = await backend.users.updateProfile({
+          workspaceId,
+          actorId,
+          targetUserId: actorId,
+          updates,
+        });
+
+        const session = { user };
+        await setJson(SESSION_KEY, session);
+        dispatch({ type: "SET_SESSION", session });
+        logEvent("user_profile_updated", { userId: actorId });
+        return user;
+      },
+
+      async requestEmailChange({ requestedEmail }) {
+        const workspaceId = state.workspace?.id;
+        const user = state.session?.user;
+        if (!workspaceId || !user?.id) throw new Error("Not signed in");
+        const next = String(requestedEmail || "").trim().toLowerCase();
+        if (!next) throw new Error("Email is required");
+
+        const description = [
+          "Email change request",
+          "",
+          `Current email: ${user.email}`,
+          `Requested email: ${next}`,
+          "",
+          "Note: Email changes require admin approval.",
+        ].join("\n");
+
+        const res = await backend.support.create({
+          workspaceId,
+          userId: user.id,
+          subject: "Email change request",
+          description,
+          priority: "Normal",
+        });
+
+        logEvent("user_email_change_requested", { userId: user.id });
+        return res;
+      },
+
+      async adminChangeCustomerEmail({ clientId, email }) {
+        const workspaceId = state.workspace?.id;
+        const actorId = state.session?.user?.id;
+        if (!workspaceId || !actorId) throw new Error("Not signed in");
+        const next = String(email || "").trim().toLowerCase();
+        if (!next) throw new Error("Email is required");
+
+        const linked = await backend.users.getByClientId({ workspaceId, clientId });
+        if (!linked?.id) throw new Error("No linked customer user");
+
+        const updated = await backend.users.updateProfile({
+          workspaceId,
+          actorId,
+          targetUserId: linked.id,
+          updates: { email: next },
+        });
+
+        logEvent("admin_customer_email_changed", { actorId, targetUserId: linked.id });
+        return updated;
+      },
+
       async forgotPassword({ email }) {
         return backend.auth.forgotPassword({ email });
       },
 
       async logout() {
         await remove(SESSION_KEY);
+        await clearDeveloperSession();
         dispatch({ type: "LOGOUT" });
+        dispatch({ type: "SET_DEVELOPER_UNLOCKED", value: false });
         logEvent("auth_logout", {});
+
+        await maybeLog({
+          category: "Security",
+          subCategory: "AUTH_LOGOUT",
+          severity: "INFO",
+          message: "Logout",
+        });
       },
 
       async setBackendMode(mode) {
         dispatch({ type: "SET_BACKEND_MODE", mode });
         logEvent("backend_mode_set", { mode });
+
+        // Long-press/dev entry is controlled by backendMode.
+        // Re-evaluate dev session state.
+        dispatch({ type: "SET_DEVELOPER_UNLOCKED", value: await isDeveloperSessionActive(state.session?.user) });
+      },
+
+      async unlockDeveloperTools(code) {
+        const user = state.session?.user;
+        if (!isDeveloperUser(user)) throw new Error("403 Forbidden");
+
+        const ok = await verifyDeveloperCode(code);
+        if (!ok) throw new Error("Invalid unlock code");
+
+        await setDeveloperSessionVerified();
+        dispatch({ type: "SET_DEVELOPER_UNLOCKED", value: true });
+        logEvent("developer_tools_unlocked", { userId: user.id });
+
+        await maybeLog({
+          category: "Security",
+          subCategory: "DEV_SESSION_VERIFIED",
+          severity: "INFO",
+          message: "Developer session verified",
+          actorUserId: user.id,
+          actorRole: user.role,
+        });
+
+        return true;
+      },
+
+      async lockDeveloperTools() {
+        await clearDeveloperSession();
+        dispatch({ type: "SET_DEVELOPER_UNLOCKED", value: false });
+        logEvent("developer_tools_locked", { userId: state.session?.user?.id || "" });
+        return true;
       },
 
       async safeCall(fn, { title = "Error" } = {}) {
@@ -173,12 +342,27 @@ export function AppProviders({ children }) {
         } catch (e) {
           const message = e?.message || "Something went wrong";
           logEvent("error", { message });
+
+          await maybeLog({
+            category: "Technical",
+            subCategory: "API_REQUEST_FAIL",
+            severity: "WARN",
+            message,
+            actorUserId: state.session?.user?.id,
+            actorRole: state.session?.user?.role,
+            payload: {
+              title,
+              currentScreen: state.currentScreen,
+              backendMode: state.backendMode,
+            },
+          });
+
           Alert.alert(title, message);
           return null;
         }
       },
     };
-  }, [backend, state.session?.user?.id, state.workspace?.id]);
+  }, [backend, state.session, state.workspace]);
 
   return (
     <AppStateContext.Provider value={state}>

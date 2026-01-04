@@ -2,7 +2,18 @@ import React from "react";
 import { View, Text, TextInput, StyleSheet } from "react-native";
 import { theme } from "../theme";
 
-export function TextField({ label, value, onChangeText, placeholder, secureTextEntry, multiline, right }) {
+export function TextField({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry,
+  multiline,
+  right,
+  editable = true,
+  keyboardType,
+  autoCapitalize,
+}) {
   return (
     <View style={styles.wrap}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
@@ -14,7 +25,10 @@ export function TextField({ label, value, onChangeText, placeholder, secureTextE
           placeholderTextColor={theme.colors.mutedText}
           secureTextEntry={secureTextEntry}
           multiline={multiline}
-          style={[styles.input, multiline ? styles.multiline : null]}
+          editable={editable}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          style={[styles.input, multiline ? styles.multiline : null, !editable ? styles.disabled : null]}
         />
         {right ? <View style={styles.right}>{right}</View> : null}
       </View>
@@ -53,5 +67,8 @@ const styles = StyleSheet.create({
   },
   right: {
     marginLeft: theme.spacing.sm,
+  },
+  disabled: {
+    opacity: 0.65,
   },
 });

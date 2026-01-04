@@ -9,15 +9,17 @@ import { Button } from "../../components/Button";
 import { theme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { formatDateTime } from "../../utils/date";
+import { isAdminOrBusiness } from "../../utils/roles";
 
 export function ClientDetailScreen({ navigation, route }) {
-  const { workspace } = useAppState();
+  const { workspace, session } = useAppState();
   const actions = useAppActions();
   const clientId = route?.params?.clientId;
 
   const [client, setClient] = useState(null);
   const [docs, setDocs] = useState([]);
   const [timeline, setTimeline] = useState([]);
+  const [linkedUser, setLinkedUser] = useState(null);
 
   const title = useMemo(() => client?.name || "Client", [client]);
 
@@ -29,6 +31,14 @@ export function ClientDetailScreen({ navigation, route }) {
     if (!workspace?.id || !clientId) return;
     const c = await actions.safeCall(() => actions.backend.clients.getById({ workspaceId: workspace.id, clientId }), { title: "Load failed" });
     if (c) setClient(c);
+
+    if (isAdminOrBusiness(session?.user?.role)) {
+      const u = await actions.safeCall(
+        () => actions.backend.users.getByClientId({ workspaceId: workspace.id, clientId }),
+        { title: "Load failed" }
+      );
+      setLinkedUser(u);
+    }
 
     const d = await actions.safeCall(() => actions.backend.documents.listForClient({ workspaceId: workspace.id, clientId }), { title: "Load failed" });
     if (d) setDocs(d);
@@ -62,6 +72,21 @@ export function ClientDetailScreen({ navigation, route }) {
           <View style={{ height: theme.spacing.md }} />
           <Button title="New document request" variant="secondary" onPress={() => navigation.navigate("NewDocumentRequest", { clientId: client.id })} />
         </Card>
+
+        {isAdminOrBusiness(session?.user?.role) ? (
+          <Card style={styles.card}>
+            <Text style={styles.section}>Customer identity</Text>
+            <Text style={styles.muted}>Login email (identifier)</Text>
+            <Text style={styles.muted}>{linkedUser?.email || "No linked customer user"}</Text>
+            <View style={{ height: theme.spacing.md }} />
+            <Button
+              title="Change customer login email"
+              variant="secondary"
+              onPress={() => navigation.navigate("AdminChangeCustomerEmail", { clientId: client.id })}
+              disabled={!linkedUser}
+            />
+          </Card>
+        ) : null}
 
         <Text style={styles.section}>Document requests</Text>
         {docs.length === 0 ? (

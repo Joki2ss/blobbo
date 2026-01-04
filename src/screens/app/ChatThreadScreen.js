@@ -7,6 +7,7 @@ import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
 import { theme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
+import { isAdminOrBusiness } from "../../utils/roles";
 import { formatTime } from "../../utils/date";
 import { logEvent } from "../../services/logger";
 
@@ -64,10 +65,10 @@ export function ChatThreadScreen({ navigation, route }) {
       await actions.backend.chat.sendMessage({
         workspaceId: workspace.id,
         clientId,
-        senderType: session.user.role === "ADMIN" ? "ADMIN" : "CLIENT",
+        senderType: isAdminOrBusiness(session.user.role) ? "ADMIN" : "CLIENT",
         senderId: session.user.id,
         text: payload,
-        simulateReply: backendMode === "MOCK" && session.user.role === "ADMIN",
+        simulateReply: backendMode === "MOCK" && isAdminOrBusiness(session.user.role),
       });
       await refresh();
       setTimeout(() => {
