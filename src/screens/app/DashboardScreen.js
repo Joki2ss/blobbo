@@ -1,1 +1,149 @@
-import React, { useEffect, useMemo, useState } from "react";\nimport { View, StyleSheet, ScrollView, Text } from "react-native";\nimport { Ionicons } from "@expo/vector-icons";\n\nimport { Screen } from "../../components/Screen";\nimport { Header } from "../../components/Header";\nimport { KpiCard } from "../../components/KpiCard";\nimport { Card } from "../../components/Card";\nimport { Button } from "../../components/Button";\nimport { useTheme } from "../../theme";\nimport { useAppActions, useAppState } from "../../store/AppStore";\nimport { formatGreeting } from "../../utils/greeting";\nimport { t } from "../../i18n/strings";\n\nexport function DashboardScreen({ navigation }) {\n  const { session, workspace, backendMode } = useAppState();\n  const actions = useAppActions();\n  const theme = useTheme();\n  const styles = useMemo(() => makeStyles(theme), [theme]);\n\n  const [kpis, setKpis] = useState({ activeClients: 0, pendingDocs: 0, unreadMessages: 0 });\n\n  const subtitle = useMemo(() => {\n    if (!session?.user) return "";\n    const greeting = formatGreeting({ user: session.user });\n    return greeting || t("dashboard.subtitle");\n  }, [session, workspace, backendMode]);\n\n  const metaLine = useMemo(() => {\n    if (!session?.user || !workspace) return "";\n    return `${workspace.name} • ${session.user.role} • ${backendMode}`;\n  }, [session?.user?.id, workspace?.id, backendMode]);\n\n  useEffect(() => {\n    let mounted = true;\n    (async () => {\n      if (!workspace) return;\n      const clients = await actions.safeCall(() => actions.backend.clients.list({ workspaceId: workspace.id }), { title: "Load failed" });\n      const threads = await actions.safeCall(() => actions.backend.chat.listThreads({ workspaceId: workspace.id }), { title: "Load failed" });\n\n      // pending docs: count requests with pending/partial\n      let pendingDocs = 0;\n      if (clients) {\n        for (const c of clients) {\n          const docs = await actions.backend.documents.listForClient({ workspaceId: workspace.id, clientId: c.id });\n          pendingDocs += docs.filter((d) => d.status !== "completed").length;\n        }\n      }\n\n      const unreadMessages = (threads || []).reduce((sum, t) => sum + (t.unreadCount || 0), 0);\n\n      if (mounted) {\n        setKpis({\n          activeClients: clients?.length || 0,\n          pendingDocs,\n          unreadMessages,\n        });\n      }\n    })();\n    return () => {\n      mounted = false;\n    };\n  }, [workspace?.id, backendMode]);\n\n  return (\n    <Screen>\n      <Header title="SXR Managements" subtitle={subtitle} />\n      <ScrollView contentContainerStyle={styles.content}>\n        {metaLine ? (\n          <Card style={styles.metaCard}>\n            <View style={styles.metaRow}>\n              <Text style={styles.metaText}>{metaLine}</Text>\n            </View>\n          </Card>\n        ) : null}\n        <View style={styles.kpiRow}>\n          <KpiCard\n            label="Active clients"\n            value={kpis.activeClients}\n            icon={<Ionicons name="people-outline" size={20} color={theme.colors.primary} />}\n          />\n          <View style={{ width: theme.spacing.md }} />\n          <KpiCard\n            label="Pending docs"\n            value={kpis.pendingDocs}\n            icon={<Ionicons name="document-text-outline" size={20} color={theme.colors.warning} />}\n          />\n        </View>\n\n        <View style={styles.kpiRow}>\n          <KpiCard\n            label="Unread messages"\n            value={kpis.unreadMessages}\n            icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />}\n          />\n          <View style={{ width: theme.spacing.md }} />\n          <Card style={styles.cardMini}>\n            <Button title="Ask support" onPress={() => navigation.navigate("Support")} />\n          </Card>\n        </View>\n\n        <Card>\n          <View style={styles.actionsCol}>\n            <Button title="Add client" onPress={() => navigation.navigate("NewClient")} />\n            <View style={{ height: theme.spacing.md }} />\n            <Button\n              title="New document request"\n              variant="secondary"\n              onPress={() => navigation.navigate("NewDocumentRequest")}\n            />\n            <View style={{ height: theme.spacing.md }} />\n            <Button title="Open support" variant="secondary" onPress={() => navigation.navigate("Support")} />\n          </View>\n        </Card>\n      </ScrollView>\n    </Screen>\n  );\n}\n\n\nfunction makeStyles(theme) {\n  return StyleSheet.create({\n    content: {\n      paddingHorizontal: theme.spacing.lg,\n      paddingBottom: theme.spacing.xl,\n    },\n    metaCard: {\n      marginBottom: theme.spacing.md,\n    },\n    metaRow: {\n      paddingVertical: theme.spacing.sm,\n    },\n    metaText: {\n      ...theme.typography.small,\n      color: theme.colors.mutedText,\n    },\n    kpiRow: {\n      flexDirection: "row",\n      marginBottom: theme.spacing.md,\n    },\n    cardMini: {\n      flex: 1,\n      padding: theme.spacing.lg,\n    },\n    actionsCol: {\n      paddingVertical: theme.spacing.sm,\n    },\n  });\n}\n
+import React, { useEffect, useMemo, useState } from "react";
+import { View, StyleSheet, ScrollView, Text } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+
+import { Screen } from "../../components/Screen";
+import { Header } from "../../components/Header";
+import { KpiCard } from "../../components/KpiCard";
+import { Card } from "../../components/Card";
+import { Button } from "../../components/Button";
+import { useTheme } from "../../theme";
+import { useAppActions, useAppState } from "../../store/AppStore";
+import { formatGreeting } from "../../utils/greeting";
+import { t } from "../../i18n/strings";
+
+export function DashboardScreen({ navigation }) {
+  const { session, workspace, backendMode } = useAppState();
+  const actions = useAppActions();
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
+  const [kpis, setKpis] = useState({ activeClients: 0, pendingDocs: 0, unreadMessages: 0 });
+
+  const subtitle = useMemo(() => {
+    if (!session?.user) return "";
+    const greeting = formatGreeting({ user: session.user });
+    return greeting || t("dashboard.subtitle");
+  }, [session, workspace, backendMode]);
+
+  const metaLine = useMemo(() => {
+    if (!session?.user || !workspace) return "";
+    return `${workspace.name} • ${session.user.role} • ${backendMode}`;
+  }, [session?.user?.id, workspace?.id, backendMode]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!workspace) return;
+      const clients = await actions.safeCall(() => actions.backend.clients.list({ workspaceId: workspace.id }), { title: "Load failed" });
+      const threads = await actions.safeCall(() => actions.backend.chat.listThreads({ workspaceId: workspace.id }), { title: "Load failed" });
+
+      // pending docs: count requests with pending/partial
+      let pendingDocs = 0;
+      if (clients) {
+        for (const c of clients) {
+          const docs = await actions.backend.documents.listForClient({ workspaceId: workspace.id, clientId: c.id });
+          pendingDocs += docs.filter((d) => d.status !== "completed").length;
+        }
+      }
+
+      const unreadMessages = (threads || []).reduce((sum, t) => sum + (t.unreadCount || 0), 0);
+
+      if (mounted) {
+        setKpis({
+          activeClients: clients?.length || 0,
+          pendingDocs,
+          unreadMessages,
+        });
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [workspace?.id, backendMode]);
+
+  return (
+    <Screen>
+      <Header title="SXR Managements" subtitle={subtitle} />
+      <ScrollView contentContainerStyle={styles.content}>
+        {metaLine ? (
+          <Card style={styles.metaCard}>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaText}>{metaLine}</Text>
+            </View>
+          </Card>
+        ) : null}
+        <View style={styles.kpiRow}>
+          <KpiCard
+            label="Active clients"
+            value={kpis.activeClients}
+            icon={<Ionicons name="people-outline" size={20} color={theme.colors.primary} />}
+          />
+          <View style={{ width: theme.spacing.md }} />
+          <KpiCard
+            label="Pending docs"
+            value={kpis.pendingDocs}
+            icon={<Ionicons name="document-text-outline" size={20} color={theme.colors.warning} />}
+          />
+        </View>
+
+        <View style={styles.kpiRow}>
+          <KpiCard
+            label="Unread messages"
+            value={kpis.unreadMessages}
+            icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />}
+          />
+          <View style={{ width: theme.spacing.md }} />
+          <Card style={styles.cardMini}>
+            <Button title="Ask support" onPress={() => navigation.navigate("Support")} />
+          </Card>
+        </View>
+
+        <Card>
+          <View style={styles.actionsCol}>
+            <Button title="Add client" onPress={() => navigation.navigate("NewClient")} />
+            <View style={{ height: theme.spacing.md }} />
+            <Button
+              title="New document request"
+              variant="secondary"
+              onPress={() => navigation.navigate("NewDocumentRequest")}
+            />
+            <View style={{ height: theme.spacing.md }} />
+            <Button title="Open support" variant="secondary" onPress={() => navigation.navigate("Support")} />
+          </View>
+        </Card>
+      </ScrollView>
+    </Screen>
+  );
+}
+
+
+function makeStyles(theme) {
+  return StyleSheet.create({
+    content: {
+      paddingHorizontal: theme.spacing.lg,
+      paddingBottom: theme.spacing.xl,
+    },
+    metaCard: {
+      marginBottom: theme.spacing.md,
+    },
+    metaRow: {
+      paddingVertical: theme.spacing.sm,
+    },
+    metaText: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+    },
+    kpiRow: {
+      flexDirection: "row",
+      marginBottom: theme.spacing.md,
+    },
+    cardMini: {
+      flex: 1,
+      padding: theme.spacing.lg,
+    },
+    actionsCol: {
+      paddingVertical: theme.spacing.sm,
+    },
+  });
+}
