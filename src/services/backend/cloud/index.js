@@ -92,6 +92,12 @@ export const cloudBackend = {
     async updateProfile() {
       throw notConfigured();
     },
+    async listPublicStorefronts() {
+      throw notConfigured();
+    },
+    async getPublicStorefrontById() {
+      throw notConfigured();
+    },
   },
   audit: {
     async list() {
