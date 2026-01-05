@@ -17,7 +17,13 @@ import { SupportTicketDetailScreen } from "../../screens/app/SupportTicketDetail
 import { DeveloperTicketsScreen } from "../../screens/app/DeveloperTicketsScreen";
 import { DocumentsListScreen } from "../../screens/app/DocumentsListScreen";
 import { DocumentEditorLazyScreen } from "../../screens/app/DocumentEditorLazyScreen";
-import { DeveloperFeedControlLazyScreen, PostEditorLazyScreen, PublicFeedLazyScreen } from "../../screens/public";
+import {
+  DeveloperFeedControlLazyScreen,
+  MapSearchLazyScreen,
+  PostEditorLazyScreen,
+  PublicFeedLazyScreen,
+  PublicStorefrontLazyScreen,
+} from "../../screens/public";
 
 const Stack = createNativeStackNavigator();
 
@@ -26,6 +32,8 @@ export function AppStack() {
     <Stack.Navigator>
       <Stack.Screen name="Home" component={TabNavigator} options={{ headerShown: false }} />
       <Stack.Screen name="PublicFeed" component={PublicFeedLazyScreen} options={{ title: "Discover" }} />
+      <Stack.Screen name="MapSearch" component={MapSearchLazyScreen} options={{ title: "Map" }} />
+      <Stack.Screen name="PublicStorefront" component={PublicStorefrontLazyScreen} options={{ title: "Storefront" }} />
       <Stack.Screen name="PostEditor" component={PostEditorLazyScreen} options={{ title: "Post" }} />
       <Stack.Screen name="DeveloperFeed" component={DeveloperFeedControlLazyScreen} options={{ title: "Developer feed" }} />
       <Stack.Screen name="ClientDetail" component={ClientDetailScreen} options={{ title: "Client" }} />

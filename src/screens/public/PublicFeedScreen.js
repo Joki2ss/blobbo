@@ -67,13 +67,23 @@ export function PublicFeedScreen({ navigation }) {
         title={PRODUCT_NAME}
         subtitle={t(BUSINESSCAFE_DESCRIPTION_KEY)}
         right={
-          user && canCreate ? (
-            <Pressable
-              onPress={() => navigation.navigate("PostEditor", { mode: "create" })}
-              style={({ pressed }) => [styles.iconWrap, pressed ? { opacity: 0.85 } : null]}
-            >
-              <Ionicons name="add" size={18} color={theme.colors.primary} />
-            </Pressable>
+          cfg.PUBLIC_FEED_ENABLED ? (
+            <View style={styles.headerRightRow}>
+              <Pressable
+                onPress={() => navigation.navigate("MapSearch")}
+                style={({ pressed }) => [styles.iconWrap, pressed ? { opacity: 0.85 } : null]}
+              >
+                <Ionicons name="map-outline" size={18} color={theme.colors.primary} />
+              </Pressable>
+              {user && canCreate ? (
+                <Pressable
+                  onPress={() => navigation.navigate("PostEditor", { mode: "create" })}
+                  style={({ pressed }) => [styles.iconWrap, pressed ? { opacity: 0.85 } : null]}
+                >
+                  <Ionicons name="add" size={18} color={theme.colors.primary} />
+                </Pressable>
+              ) : null}
+            </View>
           ) : null
         }
       />
