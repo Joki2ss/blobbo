@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Alert, Switch } from "react-native";
 
 import { Screen } from "../../components/Screen";
 import { Card } from "../../components/Card";
@@ -7,7 +7,8 @@ import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
 import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
-import { isCustomerOrStaff } from "../../utils/roles";
+import { isAdminOrBusiness, isCustomerOrStaff } from "../../utils/roles";
+import { getStorefrontAddressMissingFields, hasCompleteStorefrontAddress } from "../../storefront/storefrontValidation";
 
 export function ProfileScreen({ navigation }) {
   const { session, workspace } = useAppState();
@@ -21,10 +22,28 @@ export function ProfileScreen({ navigation }) {
   const [phone, setPhone] = useState(user?.phone || "");
   const [photoUri, setPhotoUri] = useState(user?.photoUri || "");
 
+  const [firstName, setFirstName] = useState(user?.firstName || "");
+  const [lastName, setLastName] = useState(user?.lastName || "");
+
+  const [storefrontBusinessName, setStorefrontBusinessName] = useState(user?.storefrontBusinessName || "");
+  const [storefrontCategory, setStorefrontCategory] = useState(user?.storefrontCategory || "");
+  const [storefrontVatNumber, setStorefrontVatNumber] = useState(user?.storefrontVatNumber || "");
+
+  const [storefrontStreetAddress, setStorefrontStreetAddress] = useState(user?.storefrontStreetAddress || "");
+  const [storefrontStreetNumber, setStorefrontStreetNumber] = useState(user?.storefrontStreetNumber || "");
+  const [storefrontCity, setStorefrontCity] = useState(user?.storefrontCity || "");
+  const [storefrontRegion, setStorefrontRegion] = useState(user?.storefrontRegion || "");
+  const [storefrontCountry, setStorefrontCountry] = useState(user?.storefrontCountry || "");
+
+  const [storefrontLat, setStorefrontLat] = useState(user?.storefrontLat != null ? String(user.storefrontLat) : "");
+  const [storefrontLng, setStorefrontLng] = useState(user?.storefrontLng != null ? String(user.storefrontLng) : "");
+  const [storefrontPublicEnabled, setStorefrontPublicEnabled] = useState(!!user?.storefrontPublicEnabled);
+
   const [requestedEmail, setRequestedEmail] = useState("");
   const [saving, setSaving] = useState(false);
 
   const isCustomer = isCustomerOrStaff(user?.role);
+  const isAdmin = isAdminOrBusiness(user?.role);
 
   const planLabel = useMemo(() => {
     return isCustomer ? "Customer plan: Lifetime Free" : "Admin account";
@@ -34,13 +53,59 @@ export function ProfileScreen({ navigation }) {
     if (!workspace?.id || !user?.id) return;
     setSaving(true);
 
+    const wantsPublic = !!storefrontPublicEnabled;
+    const missing = wantsPublic ? getStorefrontAddressMissingFields({
+      role: user?.role,
+      storefrontStreetAddress,
+      storefrontStreetNumber,
+      storefrontCity,
+      storefrontRegion,
+      storefrontCountry,
+    }) : [];
+
+    if (wantsPublic && missing.length > 0) {
+      setSaving(false);
+      Alert.alert(
+        "Storefront",
+        "Complete the storefront address before enabling the public profile."
+      );
+      setStorefrontPublicEnabled(false);
+      return;
+    }
+
     const updated = await actions.safeCall(
-      () => actions.updateMyProfile({ fullName, phone, photoUri }),
+      () =>
+        actions.updateMyProfile({
+          fullName,
+          phone,
+          photoUri,
+          ...(isAdmin
+            ? {
+                firstName,
+                lastName,
+                storefrontBusinessName,
+                storefrontCategory,
+                storefrontVatNumber,
+                storefrontStreetAddress,
+                storefrontStreetNumber,
+                storefrontCity,
+                storefrontRegion,
+                storefrontCountry,
+                storefrontLat,
+                storefrontLng,
+                storefrontPublicEnabled,
+              }
+            : null),
+        }),
       { title: "Profile" }
     );
 
     setSaving(false);
-    if (updated) Alert.alert("Saved", "Profile updated.");
+    if (updated) {
+      const publicOk = !storefrontPublicEnabled || hasCompleteStorefrontAddress(updated);
+      if (storefrontPublicEnabled && !publicOk) setStorefrontPublicEnabled(false);
+      Alert.alert("Saved", "Profile updated.");
+    }
   }
 
   async function requestEmailChange() {
@@ -68,6 +133,12 @@ export function ProfileScreen({ navigation }) {
         <Card style={styles.card}>
           <Text style={styles.section}>Basics</Text>
           <TextField label="Full name" value={fullName} onChangeText={setFullName} placeholder="Full name" />
+          {isAdmin ? (
+            <>
+              <TextField label="First name (optional)" value={firstName} onChangeText={setFirstName} placeholder="Name" />
+              <TextField label="Last name (optional)" value={lastName} onChangeText={setLastName} placeholder="Surname" />
+            </>
+          ) : null}
           <TextField label="Phone" value={phone} onChangeText={setPhone} placeholder="+1 ..." />
           <TextField
             label="Profile photo URL (optional)"
@@ -93,6 +164,43 @@ export function ProfileScreen({ navigation }) {
 
           <Button title="Save" onPress={saveProfile} loading={saving} />
         </Card>
+
+        {isAdmin ? (
+          <Card style={styles.card}>
+            <Text style={styles.section}>Storefront</Text>
+            <Text style={styles.notice}>Required for publishing posts: address + city/region/country.</Text>
+
+            <TextField
+              label="Business name"
+              value={storefrontBusinessName}
+              onChangeText={setStorefrontBusinessName}
+              placeholder="Your business name"
+            />
+            <TextField label="Category" value={storefrontCategory} onChangeText={setStorefrontCategory} placeholder="lawyer, dentist, artisan..." />
+            <TextField
+              label="VAT / Partita IVA (optional)"
+              value={storefrontVatNumber}
+              onChangeText={setStorefrontVatNumber}
+              placeholder="IT... or EU/extra-EU"
+              autoCapitalize="characters"
+            />
+
+            <TextField label="Street address" value={storefrontStreetAddress} onChangeText={setStorefrontStreetAddress} placeholder="Via Roma" />
+            <TextField label="Street number" value={storefrontStreetNumber} onChangeText={setStorefrontStreetNumber} placeholder="10" />
+            <TextField label="City" value={storefrontCity} onChangeText={setStorefrontCity} placeholder="Milano" />
+            <TextField label="Region / Province" value={storefrontRegion} onChangeText={setStorefrontRegion} placeholder="MI / Lombardia" />
+            <TextField label="Country" value={storefrontCountry} onChangeText={setStorefrontCountry} placeholder="Italy" />
+
+            <Text style={[styles.section, { marginTop: theme.spacing.md }]}>GPS (optional)</Text>
+            <TextField label="Latitude" value={storefrontLat} onChangeText={setStorefrontLat} placeholder="45.4642" keyboardType="numeric" />
+            <TextField label="Longitude" value={storefrontLng} onChangeText={setStorefrontLng} placeholder="9.1900" keyboardType="numeric" />
+
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Public storefront (Map)</Text>
+              <Switch value={storefrontPublicEnabled} onValueChange={setStorefrontPublicEnabled} />
+            </View>
+          </Card>
+        ) : null}
 
         {isCustomer ? (
           <Card style={styles.card}>
@@ -138,6 +246,19 @@ function makeStyles(theme) {
       color: theme.colors.mutedText,
       marginBottom: theme.spacing.md,
       marginTop: -4,
+    },
+    switchRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: theme.spacing.md,
+      paddingVertical: 6,
+    },
+    switchLabel: {
+      ...theme.typography.body,
+      color: theme.colors.text,
+      flex: 1,
+      marginRight: theme.spacing.md,
     },
   });
 }

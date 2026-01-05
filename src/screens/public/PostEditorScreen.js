@@ -12,6 +12,7 @@ import { useAppActions, useAppState } from "../../store/AppStore";
 import { getSupportRuntimeConfig } from "../../config/supportFlags";
 import { isAdminOrBusiness } from "../../utils/roles";
 import { isDeveloperUser } from "../../support/SupportPermissions";
+import { getStorefrontAddressMissingFields, normalizeStorefrontField } from "../../storefront/storefrontValidation";
 import {
   PLAN_TYPES,
   VISIBILITY_STATUS,
@@ -128,6 +129,20 @@ export function PostEditorScreen({ navigation, route }) {
     };
   }, [cfg.PUBLIC_FEED_ENABLED, mode, postId, isDev]);
 
+  useEffect(() => {
+    if (mode !== "create") return;
+    if (!user) return;
+
+    // Reasonable defaults for business/admin based on profile.
+    if (isAdminOrBusiness(user.role)) {
+      if (!ownerBusinessName) setOwnerBusinessName(String(user.storefrontBusinessName || user.fullName || "").trim());
+      if (!ownerCategory) setOwnerCategory(String(user.storefrontCategory || "").trim());
+      if (!city) setCity(String(user.storefrontCity || "").trim());
+      if (!region) setRegion(String(user.storefrontRegion || "").trim());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, user?.id]);
+
   function addKeyword() {
     const raw = keywordsText.trim().toLowerCase();
     if (!raw) return;
@@ -168,7 +183,36 @@ export function PostEditorScreen({ navigation, route }) {
     if (mode === "create" && !canCreate) return;
     if (mode === "edit" && !canEditExisting) return;
 
+    // Location gating: business/admin must complete storefront address before publishing.
+    if (!isDev && isAdminOrBusiness(user.role)) {
+      const missing = getStorefrontAddressMissingFields(user);
+      if (missing.length > 0) {
+        Alert.alert("Storefront required", "Complete your business address in Profile before publishing posts.");
+        return;
+      }
+    }
+
     setLoading(true);
+
+    const profileCity = normalizeStorefrontField(user.storefrontCity);
+    const profileRegion = normalizeStorefrontField(user.storefrontRegion);
+    const profileCountry = normalizeStorefrontField(user.storefrontCountry);
+    const profileStreetAddress = normalizeStorefrontField(user.storefrontStreetAddress);
+    const profileStreetNumber = normalizeStorefrontField(user.storefrontStreetNumber);
+    const locationCity = normalizeStorefrontField(city) || profileCity;
+    const locationRegion = normalizeStorefrontField(region) || profileRegion;
+    const location =
+      locationCity || locationRegion
+        ? {
+            city: locationCity,
+            region: locationRegion,
+            country: profileCountry || undefined,
+            streetAddress: profileStreetAddress || undefined,
+            streetNumber: profileStreetNumber || undefined,
+            lat: user.storefrontLat != null ? Number(user.storefrontLat) : undefined,
+            lng: user.storefrontLng != null ? Number(user.storefrontLng) : undefined,
+          }
+        : null;
 
     const payload = {
       ownerBusinessName,
@@ -179,7 +223,7 @@ export function PostEditorScreen({ navigation, route }) {
       images,
       planType,
       isPermanent,
-      location: city || region ? { city, region } : null,
+      location,
     };
 
     const res = await actions.safeCall(async () => {
