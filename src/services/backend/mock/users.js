@@ -57,6 +57,38 @@ function hasCompleteStorefrontAddress(user) {
   return !!(streetAddress && streetNumber && city && region && country);
 }
 
+function hasValidStorefrontCoords(user) {
+  const lat = typeof user.storefrontLat === "number" ? user.storefrontLat : Number(user.storefrontLat);
+  const lng = typeof user.storefrontLng === "number" ? user.storefrontLng : Number(user.storefrontLng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  if (lat < -90 || lat > 90) return false;
+  if (lng < -180 || lng > 180) return false;
+  return true;
+}
+
+function normalizeList(v) {
+  if (Array.isArray(v)) return v.map((x) => String(x || "").trim()).filter(Boolean).slice(0, 20);
+  if (typeof v === "string") {
+    return v
+      .split(",")
+      .map((x) => String(x || "").trim())
+      .filter(Boolean)
+      .slice(0, 20);
+  }
+  return [];
+}
+
+function haversineKm(aLat, aLng, bLat, bLng) {
+  const R = 6371;
+  const toRad = (x) => (x * Math.PI) / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const s1 = Math.sin(dLat / 2);
+  const s2 = Math.sin(dLng / 2);
+  const aa = s1 * s1 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * s2 * s2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(aa)));
+}
+
 function matchesQuery(u, query) {
   const q = normalizeText(query).toLowerCase();
   if (!q) return true;
@@ -66,6 +98,8 @@ function matchesQuery(u, query) {
     u.email,
     u.storefrontBusinessName,
     u.storefrontCategory,
+    Array.isArray(u.storefrontTags) ? u.storefrontTags.join(" ") : u.storefrontTags,
+    Array.isArray(u.storefrontServices) ? u.storefrontServices.join(" ") : u.storefrontServices,
     u.storefrontCity,
     u.storefrontRegion,
     u.storefrontCountry,
@@ -114,6 +148,8 @@ export const users = {
       // Storefront
       "storefrontBusinessName",
       "storefrontCategory",
+      "storefrontTags",
+      "storefrontServices",
       "storefrontVatNumber",
       "storefrontStreetAddress",
       "storefrontStreetNumber",
@@ -155,6 +191,11 @@ export const users = {
             continue;
           }
 
+          if (k === "storefrontTags" || k === "storefrontServices") {
+            target[k] = normalizeList(updates[k]);
+            continue;
+          }
+
           if (k === "storefrontLat" || k === "storefrontLng") {
             const raw = normalizeText(updates[k]);
             target[k] = raw ? Number(raw) : null;
@@ -164,8 +205,8 @@ export const users = {
           target[k] = String(updates[k] || "");
         }
 
-        // Safety: do not allow enabling public storefront without a complete address.
-        if (target.storefrontPublicEnabled && !hasCompleteStorefrontAddress(target)) {
+        // Safety: do not allow enabling public storefront without a complete address + coords.
+        if (target.storefrontPublicEnabled && (!hasCompleteStorefrontAddress(target) || !hasValidStorefrontCoords(target))) {
           target.storefrontPublicEnabled = false;
         }
       }
@@ -221,6 +262,7 @@ export const users = {
       .filter((u) => isAdminOrBusiness(u.role))
       .filter((u) => !!u.storefrontPublicEnabled)
       .filter((u) => hasCompleteStorefrontAddress(u))
+      .filter((u) => hasValidStorefrontCoords(u))
       .filter((u) => matchesQuery(u, query))
       .map((u) => sanitizeUser(u));
 
@@ -235,6 +277,52 @@ export const users = {
     if (!isAdminOrBusiness(u.role)) throw new Error("Not a storefront");
     if (!u.storefrontPublicEnabled) throw new Error("Storefront not public");
     if (!hasCompleteStorefrontAddress(u)) throw new Error("Storefront address incomplete");
+    if (!hasValidStorefrontCoords(u)) throw new Error("Storefront coordinates missing");
     return sanitizeUser(u);
+  },
+
+  async searchPublicProfiles({ q, limit = 10 }) {
+    const max = Math.max(1, Math.min(50, Number(limit) || 10));
+    const list = await this.listPublicStorefronts({ query: q });
+    return list.slice(0, max).map((u) => ({
+      userId: u.id,
+      fullName: u.fullName,
+      firstName: u.firstName || "",
+      lastName: u.lastName || "",
+      storefrontBusinessName: u.storefrontBusinessName || "",
+      storefrontCategory: u.storefrontCategory || "",
+      storefrontTags: u.storefrontTags || [],
+      storefrontServices: u.storefrontServices || [],
+      storefrontCity: u.storefrontCity || "",
+      storefrontRegion: u.storefrontRegion || "",
+      storefrontCountry: u.storefrontCountry || "",
+      storefrontLat: u.storefrontLat,
+      storefrontLng: u.storefrontLng,
+    }));
+  },
+
+  async nearPublicProfiles({ lat, lng, radiusKm = 25, limit = 25 }) {
+    const aLat = Number(lat);
+    const aLng = Number(lng);
+    const r = Math.max(1, Math.min(250, Number(radiusKm) || 25));
+    const max = Math.max(1, Math.min(100, Number(limit) || 25));
+    if (!Number.isFinite(aLat) || !Number.isFinite(aLng)) throw new Error("Invalid coordinates");
+
+    const base = await this.searchPublicProfiles({ q: "", limit: 1000 });
+    const list = base
+      .map((u) => {
+        const d = haversineKm(aLat, aLng, Number(u.storefrontLat), Number(u.storefrontLng));
+        return { u, d };
+      })
+      .filter((x) => Number.isFinite(x.d) && x.d <= r)
+      .sort((a, b) => a.d - b.d)
+      .slice(0, max)
+      .map((x) => x.u);
+    return list;
+  },
+
+  async getPublicProfileById({ userId }) {
+    const u = await this.getPublicStorefrontById({ userId });
+    return { userId: u.id, ...u };
   },
 };

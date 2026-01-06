@@ -75,6 +75,12 @@ export function PublicFeedScreen({ navigation }) {
               >
                 <Ionicons name="map-outline" size={18} color={theme.colors.primary} />
               </Pressable>
+              <Pressable
+                onPress={() => navigation.navigate("FindAPro")}
+                style={({ pressed }) => [styles.iconWrap, pressed ? { opacity: 0.85 } : null]}
+              >
+                <Ionicons name="search-outline" size={18} color={theme.colors.primary} />
+              </Pressable>
               {user && canCreate ? (
                 <Pressable
                   onPress={() => navigation.navigate("PostEditor", { mode: "create" })}
@@ -122,6 +128,8 @@ export function PublicFeedScreen({ navigation }) {
               {isDev ? (
                 <View style={{ marginTop: theme.spacing.sm }}>
                   <Button title="Developer feed control" variant="secondary" onPress={() => navigation.navigate("DeveloperFeed") } />
+                  <View style={{ height: theme.spacing.sm }} />
+                  <Button title="Dev panel" variant="secondary" onPress={() => navigation.navigate("DevPanel") } />
                 </View>
               ) : null}
             </Card>

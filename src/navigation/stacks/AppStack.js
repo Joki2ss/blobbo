@@ -17,6 +17,8 @@ import { SupportTicketDetailScreen } from "../../screens/app/SupportTicketDetail
 import { DeveloperTicketsScreen } from "../../screens/app/DeveloperTicketsScreen";
 import { DocumentsListScreen } from "../../screens/app/DocumentsListScreen";
 import { DocumentEditorLazyScreen } from "../../screens/app/DocumentEditorLazyScreen";
+import { FindAProScreen } from "../../screens/FindAProScreen";
+import { DevPanelScreen } from "../../screens/DevPanelScreen";
 import {
   DeveloperFeedControlLazyScreen,
   MapSearchLazyScreen,
@@ -33,9 +35,11 @@ export function AppStack() {
       <Stack.Screen name="Home" component={TabNavigator} options={{ headerShown: false }} />
       <Stack.Screen name="PublicFeed" component={PublicFeedLazyScreen} options={{ title: "Discover" }} />
       <Stack.Screen name="MapSearch" component={MapSearchLazyScreen} options={{ title: "Map" }} />
+      <Stack.Screen name="FindAPro" component={FindAProScreen} options={{ title: "Find a Pro" }} />
       <Stack.Screen name="PublicStorefront" component={PublicStorefrontLazyScreen} options={{ title: "Storefront" }} />
       <Stack.Screen name="PostEditor" component={PostEditorLazyScreen} options={{ title: "Post" }} />
       <Stack.Screen name="DeveloperFeed" component={DeveloperFeedControlLazyScreen} options={{ title: "Developer feed" }} />
+      <Stack.Screen name="DevPanel" component={DevPanelScreen} options={{ title: "Dev panel" }} />
       <Stack.Screen name="ClientDetail" component={ClientDetailScreen} options={{ title: "Client" }} />
       <Stack.Screen name="ChatThread" component={ChatThreadScreen} options={{ title: "Chat" }} />
       <Stack.Screen name="NewMessage" component={NewMessageScreen} options={{ title: "New message" }} />

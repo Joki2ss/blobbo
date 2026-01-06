@@ -98,9 +98,38 @@ export const cloudBackend = {
     async getPublicStorefrontById() {
       throw notConfigured();
     },
+    async searchPublicProfiles() {
+      throw notConfigured();
+    },
+    async nearPublicProfiles() {
+      throw notConfigured();
+    },
+    async getPublicProfileById() {
+      throw notConfigured();
+    },
   },
   audit: {
     async list() {
+      throw notConfigured();
+    },
+  },
+  ratings: {
+    async getAggregate() {
+      throw notConfigured();
+    },
+    async submitRating() {
+      throw notConfigured();
+    },
+    async exportMyRatings() {
+      throw notConfigured();
+    },
+    async deleteMyRatings() {
+      throw notConfigured();
+    },
+    async listEventsForBusiness() {
+      throw notConfigured();
+    },
+    async deleteEvent() {
       throw notConfigured();
     },
   },
