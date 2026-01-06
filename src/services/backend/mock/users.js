@@ -260,6 +260,7 @@ export const users = {
     const db = await loadDb();
     const list = db.users
       .filter((u) => isAdminOrBusiness(u.role))
+      .filter((u) => !u.isHiddenFromPublic)
       .filter((u) => !!u.storefrontPublicEnabled)
       .filter((u) => hasCompleteStorefrontAddress(u))
       .filter((u) => hasValidStorefrontCoords(u))
@@ -274,6 +275,7 @@ export const users = {
     const db = await loadDb();
     const u = db.users.find((x) => x.id === userId);
     if (!u) throw new Error("User not found");
+    if (u.isHiddenFromPublic) throw new Error("User not found");
     if (!isAdminOrBusiness(u.role)) throw new Error("Not a storefront");
     if (!u.storefrontPublicEnabled) throw new Error("Storefront not public");
     if (!hasCompleteStorefrontAddress(u)) throw new Error("Storefront address incomplete");

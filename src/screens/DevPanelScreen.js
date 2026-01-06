@@ -11,11 +11,16 @@ import { useTheme } from "../theme";
 import { useAppActions, useAppState } from "../store/AppStore";
 import { getFeatureFlags } from "../config/featureFlags";
 import { isDeveloper } from "../services/rbac";
-import { logDevAudit, listDevAudit } from "../services/devAuditService";
-import { searchFeedPosts, updateFeedPost } from "../feed/FeedService";
+import { listAudit, logAudit } from "../services/auditService";
+import { devSearchPosts, devSetModerationTags, devSetPinnedRank, devSetPostVisibility } from "../services/devFeedService";
+import { VISIBILITY_STATUS } from "../feed/FeedPlans";
 import { devListRatingEventsForBusiness, devDeleteRatingEvent } from "../services/ratingsService";
+import { DEV_MODERATION_TAG_PRESETS } from "../config/devModerationTags";
+import { DevPostRow } from "../components/dev/DevPostRow";
+import { DevBulkActionsBar } from "../components/dev/DevBulkActionsBar";
+import { DevPinnedReorder } from "../components/dev/DevPinnedReorder";
 
-const TYPES = ["Profiles", "Feed posts", "Ratings", "Audit"]; 
+const TYPES = ["Profiles", "Feed posts", "Ratings", "Audit"];
 
 export function DevPanelScreen({ navigation }) {
   const { backendMode, session, developerUnlocked } = useAppState();
@@ -35,12 +40,13 @@ export function DevPanelScreen({ navigation }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [audit, setAudit] = useState([]);
+  const [selectedPostIds, setSelectedPostIds] = useState([]);
 
   useEffect(() => {
     if (!allowed) return;
     if (entityType !== "Audit") return;
     (async () => {
-      const list = await listDevAudit();
+      const list = await listAudit({ limit: 200 });
       setAudit(list);
     })();
   }, [allowed, entityType]);
@@ -59,17 +65,30 @@ export function DevPanelScreen({ navigation }) {
         { title: "Dev search" }
       );
       setResults(Array.isArray(list) ? list : []);
-      await logDevAudit({ actionType: "dev.search.profiles", targetId: q, meta: { count: Array.isArray(list) ? list.length : 0 } });
+      await logAudit({
+        actorUserId: user?.id,
+        actionType: "SEARCH_PROFILES",
+        targetType: "query",
+        targetId: q,
+        metadata: { count: Array.isArray(list) ? list.length : 0 },
+      });
       return;
     }
 
     if (entityType === "Feed posts") {
       const list = await actions.safeCall(
-        () => searchFeedPosts({ query: q, includeAllForDeveloper: true }),
+        () => devSearchPosts({ user, backendMode, developerUnlocked, query: q }),
         { title: "Dev search" }
       );
       setResults(Array.isArray(list) ? list : []);
-      await logDevAudit({ actionType: "dev.search.posts", targetId: q, meta: { count: Array.isArray(list) ? list.length : 0 } });
+      setSelectedPostIds([]);
+      await logAudit({
+        actorUserId: user?.id,
+        actionType: "SEARCH_POSTS",
+        targetType: "query",
+        targetId: q,
+        metadata: { count: Array.isArray(list) ? list.length : 0 },
+      });
       return;
     }
 
@@ -83,26 +102,101 @@ export function DevPanelScreen({ navigation }) {
         { title: "Dev ratings" }
       );
       setResults(Array.isArray(list) ? list : []);
-      await logDevAudit({ actionType: "dev.search.ratings", targetId: q, meta: { count: Array.isArray(list) ? list.length : 0 } });
+      await logAudit({
+        actorUserId: user?.id,
+        actionType: "SEARCH_RATINGS",
+        targetType: "business",
+        targetId: q,
+        metadata: { count: Array.isArray(list) ? list.length : 0 },
+      });
       return;
     }
 
     setResults([]);
   }
 
-  async function togglePostVisibility(post) {
-    if (!post?.postId) return;
-    const nextStatus = post.visibilityStatus === "PAUSED" ? "ACTIVE" : "PAUSED";
+  function toggleSelectPost(postId) {
+    setSelectedPostIds((prev) => {
+      const arr = Array.isArray(prev) ? prev : [];
+      if (arr.includes(postId)) return arr.filter((x) => x !== postId);
+      return [...arr, postId];
+    });
+  }
 
+  async function onPostHideToggle(post) {
+    if (!post?.postId) return;
+    const nextStatus = post.visibilityStatus === VISIBILITY_STATUS.PAUSED ? VISIBILITY_STATUS.ACTIVE : VISIBILITY_STATUS.PAUSED;
     const res = await actions.safeCall(
-      () => updateFeedPost({ actor: user, postId: post.postId, patch: { visibilityStatus: nextStatus }, allowDeveloperOverride: true }),
+      () => devSetPostVisibility({ user, backendMode, developerUnlocked, postId: post.postId, visibilityStatus: nextStatus, reason: "" }),
       { title: "Moderation" }
     );
+    if (res?.ok) await runSearch();
+  }
 
-    if (res?.ok) {
-      await logDevAudit({ actionType: "dev.posts.set_visibility", targetId: post.postId, meta: { visibilityStatus: nextStatus } });
-      await runSearch();
+  async function onPostDeleteToggle(post) {
+    if (!post?.postId) return;
+    const nextStatus = post.visibilityStatus === VISIBILITY_STATUS.DELETED ? VISIBILITY_STATUS.ACTIVE : VISIBILITY_STATUS.DELETED;
+    const res = await actions.safeCall(
+      () => devSetPostVisibility({ user, backendMode, developerUnlocked, postId: post.postId, visibilityStatus: nextStatus, reason: "" }),
+      { title: "Moderation" }
+    );
+    if (res?.ok) await runSearch();
+  }
+
+  async function onSetPinnedRank(post, rankText) {
+    if (!post?.postId) return;
+    const res = await actions.safeCall(
+      () => devSetPinnedRank({ user, backendMode, developerUnlocked, postId: post.postId, pinnedRank: rankText, reason: "" }),
+      { title: "Pin" }
+    );
+    if (res?.ok) await runSearch();
+  }
+
+  async function onToggleTag(post, tag) {
+    if (!post?.postId) return;
+    const existing = Array.isArray(post.moderationTags) ? post.moderationTags : [];
+    const next = existing.includes(tag) ? existing.filter((t) => t !== tag) : [...existing, tag];
+    const res = await actions.safeCall(
+      () => devSetModerationTags({ user, backendMode, developerUnlocked, postId: post.postId, moderationTags: next, reason: "" }),
+      { title: "Tags" }
+    );
+    if (res?.ok) await runSearch();
+  }
+
+  async function bulkSetPinnedRange(startRankText) {
+    const start = Number(startRankText);
+    if (!Number.isFinite(start)) return;
+    const selected = (Array.isArray(selectedPostIds) ? selectedPostIds : []).slice();
+    if (selected.length === 0) return;
+    const list = Array.isArray(results) ? results : [];
+    const selectedPosts = list.filter((p) => selected.includes(p.postId));
+    selectedPosts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    for (let i = 0; i < selectedPosts.length; i++) {
+      const p = selectedPosts[i];
+      // eslint-disable-next-line no-await-in-loop
+      await devSetPinnedRank({ user, backendMode, developerUnlocked, postId: p.postId, pinnedRank: start + i, reason: "bulk" });
     }
+    await runSearch();
+  }
+
+  async function bulkSetVisibility(status) {
+    const selected = (Array.isArray(selectedPostIds) ? selectedPostIds : []).slice();
+    if (selected.length === 0) return;
+    for (const postId of selected) {
+      // eslint-disable-next-line no-await-in-loop
+      await devSetPostVisibility({ user, backendMode, developerUnlocked, postId, visibilityStatus: status, reason: "bulk" });
+    }
+    await runSearch();
+  }
+
+  async function bulkUnpin() {
+    const selected = (Array.isArray(selectedPostIds) ? selectedPostIds : []).slice();
+    if (selected.length === 0) return;
+    for (const postId of selected) {
+      // eslint-disable-next-line no-await-in-loop
+      await devSetPinnedRank({ user, backendMode, developerUnlocked, postId, pinnedRank: null, reason: "bulk" });
+    }
+    await runSearch();
   }
 
   async function deleteRatingEvent(eventId) {
@@ -111,7 +205,7 @@ export function DevPanelScreen({ navigation }) {
       { title: "Delete rating" }
     );
     if (res?.ok) {
-      await logDevAudit({ actionType: "dev.ratings.delete", targetId: eventId, meta: {} });
+      await logAudit({ actorUserId: user?.id, actionType: "RATING_DELETE", targetType: "rating_event", targetId: eventId, metadata: null });
       await runSearch();
     }
   }
@@ -132,6 +226,14 @@ export function DevPanelScreen({ navigation }) {
   }
 
   const data = entityType === "Audit" ? audit : results;
+  const pinnedPosts = useMemo(() => {
+    if (entityType !== "Feed posts") return [];
+    const list = Array.isArray(results) ? results : [];
+    return list
+      .filter((p) => Number.isFinite(Number(p.pinnedRank)))
+      .slice()
+      .sort((a, b) => Number(a.pinnedRank) - Number(b.pinnedRank));
+  }, [entityType, results]);
 
   return (
     <Screen>
@@ -150,6 +252,41 @@ export function DevPanelScreen({ navigation }) {
           <Button title="Search" onPress={runSearch} />
         </Card>
 
+        {entityType === "Feed posts" ? (
+          <>
+            <DevBulkActionsBar
+              selectedCount={Array.isArray(selectedPostIds) ? selectedPostIds.length : 0}
+              onClear={() => setSelectedPostIds([])}
+              onBulkPinRange={bulkSetPinnedRange}
+              onBulkUnpin={bulkUnpin}
+              onBulkHide={() => bulkSetVisibility(VISIBILITY_STATUS.PAUSED)}
+              onBulkUnhide={() => bulkSetVisibility(VISIBILITY_STATUS.ACTIVE)}
+              onBulkDelete={() => bulkSetVisibility(VISIBILITY_STATUS.DELETED)}
+              onBulkRestore={() => bulkSetVisibility(VISIBILITY_STATUS.ACTIVE)}
+            />
+
+            <DevPinnedReorder
+              pinnedPosts={pinnedPosts}
+              onMoveUp={async (idx) => {
+                if (idx <= 0) return;
+                const a = pinnedPosts[idx - 1];
+                const b = pinnedPosts[idx];
+                await devSetPinnedRank({ user, backendMode, developerUnlocked, postId: a.postId, pinnedRank: b.pinnedRank, reason: "reorder" });
+                await devSetPinnedRank({ user, backendMode, developerUnlocked, postId: b.postId, pinnedRank: a.pinnedRank, reason: "reorder" });
+                await runSearch();
+              }}
+              onMoveDown={async (idx) => {
+                if (idx >= pinnedPosts.length - 1) return;
+                const a = pinnedPosts[idx];
+                const b = pinnedPosts[idx + 1];
+                await devSetPinnedRank({ user, backendMode, developerUnlocked, postId: a.postId, pinnedRank: b.pinnedRank, reason: "reorder" });
+                await devSetPinnedRank({ user, backendMode, developerUnlocked, postId: b.postId, pinnedRank: a.pinnedRank, reason: "reorder" });
+                await runSearch();
+              }}
+            />
+          </>
+        ) : null}
+
         <FlatList
           data={data}
           keyExtractor={(x, i) => String(x?.id || x?.postId || i)}
@@ -160,23 +297,25 @@ export function DevPanelScreen({ navigation }) {
               return (
                 <Card style={styles.itemCard}>
                   <Text style={styles.h}>{businessName}</Text>
-                  <Text style={styles.muted}>{[item.storefrontCategory, item.storefrontCity, item.storefrontRegion].filter(Boolean).join(" • ")}</Text>
+                  <Text style={styles.muted}>{[item.storefrontCategory, item.storefrontCity, item.storefrontRegion].filter(Boolean).join(" â€¢ ")}</Text>
                 </Card>
               );
             }
 
             if (entityType === "Feed posts") {
+              const selected = Array.isArray(selectedPostIds) ? selectedPostIds.includes(item.postId) : false;
               return (
-                <Card style={styles.itemCard}>
-                  <Text style={styles.h}>{item.title}</Text>
-                  <Text style={styles.muted}>{item.ownerBusinessName} • {item.visibilityStatus}</Text>
-                  <View style={{ height: theme.spacing.sm }} />
-                  <Button
-                    title={item.visibilityStatus === "PAUSED" ? "Restore" : "Hide"}
-                    variant="secondary"
-                    onPress={() => togglePostVisibility(item)}
-                  />
-                </Card>
+                <DevPostRow
+                  post={item}
+                  selected={selected}
+                  onToggleSelect={() => toggleSelectPost(item.postId)}
+                  onEdit={() => navigation.navigate("PostEditor", { mode: "edit", postId: item.postId })}
+                  onHideToggle={() => onPostHideToggle(item)}
+                  onDeleteToggle={() => onPostDeleteToggle(item)}
+                  onSetPinnedRank={(rankText) => onSetPinnedRank(item, rankText)}
+                  onToggleTag={(tag) => onToggleTag(item, tag)}
+                  tagOptions={DEV_MODERATION_TAG_PRESETS}
+                />
               );
             }
 
@@ -184,7 +323,7 @@ export function DevPanelScreen({ navigation }) {
               return (
                 <Card style={styles.itemCard}>
                   <Text style={styles.h}>Rating {item.ratingValue} / 5</Text>
-                  <Text style={styles.muted}>raterHash: {item.raterHash ? item.raterHash.slice(0, 10) + "…" : ""}</Text>
+                  <Text style={styles.muted}>raterHash: {item.raterHash ? item.raterHash.slice(0, 10) + "â€¦" : ""}</Text>
                   <Text style={styles.muted}>{new Date(item.createdAt || 0).toISOString()}</Text>
                   <View style={{ height: theme.spacing.sm }} />
                   <Button title="Delete event" variant="secondary" onPress={() => deleteRatingEvent(item.id)} />

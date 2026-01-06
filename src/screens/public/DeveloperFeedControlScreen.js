@@ -20,7 +20,7 @@ export function DeveloperFeedControlScreen({ navigation }) {
   const user = session?.user || null;
 
   const cfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
-  const isDev = useMemo(() => developerUnlocked && isDeveloperUser(user), [developerUnlocked, user?.email]);
+  const isDev = useMemo(() => isDeveloperUser(user), [user?.role]);
 
   const [posts, setPosts] = useState([]);
 
@@ -87,7 +87,7 @@ export function DeveloperFeedControlScreen({ navigation }) {
             <Card key={p.postId} style={styles.card}>
               <ListRow
                 title={p.title}
-                subtitle={`${p.ownerBusinessName} • ${p.planType} • ${p.visibilityStatus} • score ${p.rankingScore}`}
+                subtitle={`${p.ownerBusinessName} â€¢ ${p.planType} â€¢ ${p.visibilityStatus} â€¢ score ${p.rankingScore}`}
                 onPress={() => navigation.navigate("PostEditor", { mode: "edit", postId: p.postId })}
               />
               <View style={styles.rowButtons}>

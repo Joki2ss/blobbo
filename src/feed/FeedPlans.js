@@ -10,6 +10,7 @@ export const PLAN_TYPES = {
 export const VISIBILITY_STATUS = {
   ACTIVE: "ACTIVE",
   PAUSED: "PAUSED",
+  DELETED: "DELETED",
   EXPIRED: "EXPIRED",
 };
 

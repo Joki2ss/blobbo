@@ -39,7 +39,7 @@ export function PostEditorScreen({ navigation, route }) {
   const postId = route?.params?.postId || null;
   const devPlan = route?.params?.devPlan || null;
 
-  const isDev = useMemo(() => developerUnlocked && isDeveloperUser(user), [developerUnlocked, user?.email]);
+  const isDev = useMemo(() => isDeveloperUser(user), [user?.role]);
   const canCreate = useMemo(() => {
     if (!user) return false;
     if (isAdminOrBusiness(user.role)) return true;
@@ -330,7 +330,7 @@ export function PostEditorScreen({ navigation, route }) {
           <View style={styles.chips}>
             {keywords.map((k) => (
               <Pressable key={k} onPress={() => setKeywords(keywords.filter((x) => x !== k))} style={({ pressed }) => [styles.chip, pressed ? { opacity: 0.85 } : null]}>
-                <Text style={styles.chipText}>#{k}  ×</Text>
+                <Text style={styles.chipText}>#{k}  Ã—</Text>
               </Pressable>
             ))}
           </View>

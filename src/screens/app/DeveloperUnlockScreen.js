@@ -23,7 +23,7 @@ export function DeveloperUnlockScreen({ navigation }) {
 
   async function unlock() {
     if (!allowed) {
-      Alert.alert("Forbidden", "Developer unlock is restricted to the developer allowlist.");
+      Alert.alert("Forbidden", "Developer access is restricted to role=DEVELOPER.");
       return;
     }
     setWorking(true);
@@ -47,11 +47,11 @@ export function DeveloperUnlockScreen({ navigation }) {
     <Screen>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Developer tools</Text>
-        <Text style={styles.muted}>Requires allowlisted email + developer code (12h TTL).</Text>
+        <Text style={styles.muted}>Developer access is controlled by role claims (role=DEVELOPER).</Text>
 
         <Card style={styles.card}>
           <Text style={styles.section}>Unlock</Text>
-          {!allowed ? <Text style={styles.muted}>This account is not allowlisted.</Text> : null}
+          {!allowed ? <Text style={styles.muted}>This account is not a developer.</Text> : null}
           <TextField
             label="Unlock code"
             value={code}
@@ -59,7 +59,7 @@ export function DeveloperUnlockScreen({ navigation }) {
             placeholder="Enter code"
             autoCapitalize="none"
           />
-          <Button title={developerUnlocked ? "Re-unlock" : "Unlock"} onPress={unlock} loading={working} disabled={!allowed} />
+          <Button title={developerUnlocked ? "Re-enable" : "Enable"} onPress={unlock} loading={working} disabled={!allowed} />
 
           <Text style={[styles.muted, { marginTop: theme.spacing.md }]}>Status: {developerUnlocked ? "UNLOCKED" : "LOCKED"}</Text>
 

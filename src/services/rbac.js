@@ -1,19 +1,12 @@
-import { isDeveloperUser } from "../support/SupportPermissions";
-
 function normRole(role) {
   return String(role || "").trim().toUpperCase();
 }
 
 export function isDeveloper({ user, backendMode, developerUnlocked }) {
-  const role = normRole(user?.role);
-
-  // In LIVE/CLOUD we must not rely on email allowlists.
-  if (backendMode === "CLOUD") {
-    return role === "DEVELOPER";
-  }
-
-  if (role === "DEVELOPER") return true;
-  return !!developerUnlocked && !!user && isDeveloperUser(user);
+  // Security: developer access must never be granted based on email.
+  // LIVE must enforce this server-side; client only gates UI.
+  // In MOCK, we seed a DEVELOPER user for testing.
+  return normRole(user?.role) === "DEVELOPER";
 }
 
 export function requireDeveloper({ user, backendMode, developerUnlocked }) {

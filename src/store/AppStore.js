@@ -329,10 +329,8 @@ export function AppProviders({ children }) {
         const user = state.session?.user;
         if (!isDeveloperUser(user)) throw new Error("403 Forbidden");
 
-        const ok = await verifyDeveloperCode(code);
-        if (!ok) throw new Error("Invalid unlock code");
-
-        await setDeveloperSessionVerified();
+        // Deprecated: no client-side unlock codes.
+        void code;
         dispatch({ type: "SET_DEVELOPER_UNLOCKED", value: true });
         logEvent("developer_tools_unlocked", { userId: user.id });
 
@@ -349,7 +347,6 @@ export function AppProviders({ children }) {
       },
 
       async lockDeveloperTools() {
-        await clearDeveloperSession();
         dispatch({ type: "SET_DEVELOPER_UNLOCKED", value: false });
         logEvent("developer_tools_locked", { userId: state.session?.user?.id || "" });
         return true;

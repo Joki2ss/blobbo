@@ -32,10 +32,10 @@ export function PublicFeedScreen({ navigation }) {
   const canCreate = useMemo(() => {
     if (!user) return false;
     if (isAdminOrBusiness(user.role)) return true;
-    return developerUnlocked && isDeveloperUser(user);
-  }, [user?.id, user?.role, developerUnlocked]);
+    return isDeveloperUser(user);
+  }, [user?.id, user?.role]);
 
-  const isDev = useMemo(() => developerUnlocked && isDeveloperUser(user), [developerUnlocked, user?.email]);
+  const isDev = useMemo(() => isDeveloperUser(user), [user?.role]);
 
   async function refresh() {
     if (!cfg.PUBLIC_FEED_ENABLED) {
@@ -143,8 +143,14 @@ export function PublicFeedScreen({ navigation }) {
                 <Card key={p.postId} style={styles.card}>
                   <View style={styles.rowTop}>
                     <View style={{ flex: 1 }}>
+                      {String(p.authorRole || "").toUpperCase() === "DEVELOPER" ? (
+                        <Text style={styles.platformLabel}>Platform update</Text>
+                      ) : null}
                       <Text style={styles.title}>{p.title}</Text>
-                      <Text style={styles.meta}>{p.ownerBusinessName} • {p.ownerCategory}{p.location ? ` • ${p.location.city || p.location.region}` : ""}</Text>
+                      <Text style={styles.meta}>
+                        {String(p.authorRole || "").toUpperCase() === "DEVELOPER" ? "Platform" : p.ownerBusinessName} â€¢ {p.ownerCategory}
+                        {p.location ? ` â€¢ ${p.location.city || p.location.region}` : ""}
+                      </Text>
                     </View>
                     {user && (isDev || p.ownerUserId === user.id) ? (
                       <Pressable
@@ -167,6 +173,12 @@ export function PublicFeedScreen({ navigation }) {
                   <Text style={styles.desc} numberOfLines={6}>
                     {stripHtml(p.description)}
                   </Text>
+
+                  {Array.isArray(p.moderationTags) && p.moderationTags.length > 0 ? (
+                    <View style={styles.moderationRow}>
+                      <Text style={styles.moderationText}>{p.moderationTags.join(" ")}</Text>
+                    </View>
+                  ) : null}
 
                   {Array.isArray(p.keywords) && p.keywords.length > 0 ? (
                     <View style={styles.chips}>
@@ -245,6 +257,11 @@ function makeStyles(theme) {
       ...theme.typography.h3,
       color: theme.colors.text,
     },
+    platformLabel: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginBottom: 4,
+    },
     meta: {
       ...theme.typography.small,
       color: theme.colors.mutedText,
@@ -254,6 +271,18 @@ function makeStyles(theme) {
       ...theme.typography.body,
       color: theme.colors.text,
       marginTop: theme.spacing.sm,
+    },
+    moderationRow: {
+      marginTop: theme.spacing.sm,
+      alignSelf: "flex-start",
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: 6,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.chipBg,
+    },
+    moderationText: {
+      ...theme.typography.small,
+      color: theme.colors.text,
     },
     imgRow: {
       marginTop: theme.spacing.sm,

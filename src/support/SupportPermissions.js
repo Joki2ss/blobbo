@@ -1,21 +1,17 @@
-import * as SecureStore from "expo-secure-store";
-import * as Crypto from "expo-crypto";
+// Developer-only helpers.
+// SECURITY NOTE: developer access must never be granted by email allowlists or client-side unlock codes.
 
-import { DEV_CODE_HASH_SHA256, DEV_EMAIL_ALLOWLIST, DEV_SESSION_TTL_MS } from "../config/dev";
-
-const DEV_SESSION_KEY = "sxr_dev_session_v1";
-
-function normalizeEmail(email) {
-  return String(email || "").trim().toLowerCase();
+function normRole(role) {
+  return String(role || "").trim().toUpperCase();
 }
 
-export function isDeveloperEmail(email) {
-  const e = normalizeEmail(email);
-  return DEV_EMAIL_ALLOWLIST.map((x) => normalizeEmail(x)).includes(e);
+export function isDeveloperEmail(_email) {
+  // Deprecated: email allowlists are not a valid security boundary.
+  return false;
 }
 
 export function isDeveloperUser(user) {
-  return !!user?.email && isDeveloperEmail(user.email);
+  return normRole(user?.role) === "DEVELOPER";
 }
 
 export function forbiddenError(message = "403 Forbidden") {
@@ -25,48 +21,24 @@ export function forbiddenError(message = "403 Forbidden") {
 }
 
 export async function verifyDeveloperCode(inputCode) {
-  const code = String(inputCode || "").trim();
-  if (!code) return false;
-
-  const digest = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, code, {
-    encoding: Crypto.CryptoEncoding.HEX,
-  });
-
-  return digest === DEV_CODE_HASH_SHA256;
-}
-
-async function getDevSession() {
-  try {
-    const raw = await SecureStore.getItemAsync(DEV_SESSION_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+  // Deprecated: no client-side unlock codes.
+  void inputCode;
+  return false;
 }
 
 export async function clearDeveloperSession() {
-  try {
-    await SecureStore.deleteItemAsync(DEV_SESSION_KEY);
-  } catch {
-    // ignore
-  }
+  // No-op; retained for compatibility.
 }
 
 export async function setDeveloperSessionVerified() {
-  const session = { verifiedAt: Date.now() };
-  await SecureStore.setItemAsync(DEV_SESSION_KEY, JSON.stringify(session));
+  // No-op; retained for compatibility.
 }
 
 export async function isDeveloperSessionActive(user) {
-  if (!isDeveloperUser(user)) return false;
-  const s = await getDevSession();
-  if (!s?.verifiedAt) return false;
-  const age = Date.now() - Number(s.verifiedAt);
-  return age >= 0 && age <= DEV_SESSION_TTL_MS;
+  // In this model, dev tools are gated by role claims only.
+  return isDeveloperUser(user);
 }
 
 export async function requireDeveloperSession(user) {
-  const ok = await isDeveloperSessionActive(user);
-  if (!ok) throw forbiddenError();
+  if (!isDeveloperUser(user)) throw forbiddenError();
 }
