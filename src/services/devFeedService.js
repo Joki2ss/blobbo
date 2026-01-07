@@ -2,21 +2,10 @@ import { createFeedPost, listFeedPosts, updateFeedPost } from "../feed/FeedServi
 import { VISIBILITY_STATUS } from "../feed/FeedPlans";
 import { requireDeveloper } from "./rbac";
 import { AUDIT_ACTION_TYPES, logAudit } from "./auditService";
+import { normalizePinnedRank, normalizeTagList } from "../security/inputValidation";
 
 function normalizeTags(list) {
-  const src = Array.isArray(list) ? list : [];
-  const out = [];
-  const seen = new Set();
-  for (const t of src) {
-    const s = String(t || "").trim();
-    if (!s) continue;
-    if (s.length > 28) continue;
-    if (seen.has(s)) continue;
-    seen.add(s);
-    out.push(s);
-    if (out.length >= 12) break;
-  }
-  return out;
+  return normalizeTagList(list, { maxItems: 12, maxLen: 28, keepCase: true });
 }
 
 export async function devSearchPosts({ user, backendMode, developerUnlocked, query = "" }) {
@@ -88,9 +77,9 @@ export async function devSetModerationTags({ user, backendMode, developerUnlocke
 export async function devSetPinnedRank({ user, backendMode, developerUnlocked, postId, pinnedRank, reason }) {
   requireDeveloper({ user, backendMode, developerUnlocked });
 
-  const rank = pinnedRank === null || pinnedRank === undefined || pinnedRank === "" ? null : Number(pinnedRank);
+  const rank = normalizePinnedRank(pinnedRank);
   const patch = {
-    pinnedRank: Number.isFinite(rank) ? rank : null,
+    pinnedRank: rank,
     lastModeratedByUserId: user?.id || "",
     lastModeratedAt: Date.now(),
   };

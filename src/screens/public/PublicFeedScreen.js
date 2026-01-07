@@ -148,8 +148,8 @@ export function PublicFeedScreen({ navigation }) {
                       ) : null}
                       <Text style={styles.title}>{p.title}</Text>
                       <Text style={styles.meta}>
-                        {String(p.authorRole || "").toUpperCase() === "DEVELOPER" ? "Platform" : p.ownerBusinessName} â€¢ {p.ownerCategory}
-                        {p.location ? ` â€¢ ${p.location.city || p.location.region}` : ""}
+                        {String(p.authorRole || "").toUpperCase() === "DEVELOPER" ? "Platform" : p.ownerBusinessName} • {p.ownerCategory}
+                        {p.location ? ` • ${p.location.city || p.location.region}` : ""}
                       </Text>
                     </View>
                     {user && (isDev || p.ownerUserId === user.id) ? (
