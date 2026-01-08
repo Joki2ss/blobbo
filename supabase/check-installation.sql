@@ -50,6 +50,53 @@ where table_schema='public'
 
 union all
 
+-- 1c) Org columns (multi-tenant)
+select
+  'Org columns' as check_type,
+  count(*) as found,
+  case
+    when count(*) >= 3 then '✓ OK'
+    else '✗ MISSING (run 20260108103000)'
+  end as status
+from information_schema.columns
+where table_schema='public'
+  and (
+    (table_name='profiles' and column_name in ('organization_id'))
+    or (table_name='feed_posts' and column_name in ('organization_id'))
+    or (table_name='audit_log' and column_name in ('organization_id'))
+  )
+
+union all
+
+-- 1d) Org tables (multi-tenant)
+select
+  'Org tables' as check_type,
+  count(*) as found,
+  case
+    when count(*) >= 2 then '✓ OK'
+    else '✗ MISSING (run 20260108103000)'
+  end as status
+from information_schema.tables
+where table_schema='public'
+  and table_name in ('organizations','organization_members')
+
+union all
+
+-- 1e) Org helpers (multi-tenant)
+select
+  'Org helpers' as check_type,
+  count(*) as found,
+  case
+    when count(*) >= 2 then '✓ OK'
+    else '✗ MISSING (run 20260108103000)'
+  end as status
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname='private'
+  and p.proname in ('default_org_id','current_org_id')
+
+union all
+
 -- 2) Feed columns
 select 
   'Feed columns' as check_type,
@@ -116,12 +163,12 @@ select
   count(*) as found,
   case 
     when count(*) >= 1 then '✓ OK'
-    else '✗ OPTIONAL (run 20260107121000)'
+    else '✗ OPTIONAL (run 20260107121000 and/or 20260108103000)'
   end as status
 from pg_proc p
 join pg_namespace n on n.oid = p.pronamespace
 where n.nspname='public'
-  and p.proname = 'handle_new_user'
+  and p.proname in ('handle_new_auth_user','handle_new_user')
 
 union all
 
@@ -131,7 +178,7 @@ select
   count(*) as found,
   case 
     when count(*) >= 2 then '✓ OK'
-    else '✗ MISSING (run 20260107120000)'
+    else '✗ MISSING (run 20260107120100)'
   end as status
 from pg_proc p
 join pg_namespace n on n.oid = p.pronamespace
