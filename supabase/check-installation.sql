@@ -172,6 +172,39 @@ where n.nspname='public'
 
 union all
 
+-- 8) App update config (remote-controlled)
+select
+  'App update config' as check_type,
+  count(*) as found,
+  case
+    when count(*) >= 2 then '✓ OK'
+    else '✗ MISSING (run 20260108160000)'
+  end as status
+from information_schema.tables
+where table_schema='public'
+  and table_name in ('app_update_config','premium_features')
+
+union all
+
+-- 9) Update + Upgrades RPCs
+select
+  'Update/Upgrades RPCs' as check_type,
+  count(*) as found,
+  case
+    when count(*) >= 3 then '✓ OK'
+    else '✗ MISSING (run 20260108160000)'
+  end as status
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname='public'
+  and p.proname in (
+    'get_app_update_config',
+    'admin_list_premium_features',
+    'admin_get_premium_feature'
+  )
+
+union all
+
 -- 7) Private schema helpers (base security)
 select 
   'Base security' as check_type,

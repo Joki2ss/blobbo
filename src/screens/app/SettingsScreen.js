@@ -27,6 +27,7 @@ export function SettingsScreen({ navigation }) {
   const user = session?.user;
   const supportCfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
   const isDevEmail = useMemo(() => isDeveloperUser(user), [user?.email]);
+  const isAdmin = useMemo(() => String(user?.role || "").toUpperCase() === "ADMIN", [user?.role]);
 
   useEffect(() => {
     let mounted = true;
@@ -75,6 +76,13 @@ export function SettingsScreen({ navigation }) {
 
           <View style={{ height: theme.spacing.md }} />
           <Button title="Profile" variant="secondary" onPress={() => navigation.navigate("Profile")} />
+
+          {isAdmin ? (
+            <>
+              <View style={{ height: theme.spacing.sm }} />
+              <Button title="Extra / Upgrades" variant="secondary" onPress={() => navigation.navigate("AdminUpgrades")} />
+            </>
+          ) : null}
 
           {supportCfg.DOCUMENT_EDITOR_ENABLED && isAdminOrBusiness(user?.role) ? (
             <>

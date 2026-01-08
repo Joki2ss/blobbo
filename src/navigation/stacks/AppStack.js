@@ -12,6 +12,8 @@ import { NewMessageScreen } from "../../screens/app/NewMessageScreen";
 import { ProfileScreen } from "../../screens/app/ProfileScreen";
 import { SupportScreen } from "../../screens/app/SupportScreen";
 import { AdminChangeCustomerEmailScreen } from "../../screens/app/AdminChangeCustomerEmailScreen";
+import { AdminUpgradesScreen } from "../../screens/app/AdminUpgradesScreen";
+import { AdminUpgradeDetailScreen } from "../../screens/app/AdminUpgradeDetailScreen";
 import { DeveloperUnlockScreen } from "../../screens/app/DeveloperUnlockScreen";
 import { DeveloperAuditScreen } from "../../screens/app/DeveloperAuditScreen";
 import { SupportTicketsListScreen } from "../../screens/app/SupportTicketsListScreen";
@@ -38,6 +40,7 @@ export function AppStack() {
   const user = session?.user;
   const isDev = isDeveloperUser(user);
   const isPro = isDev || isAdminOrBusiness(user?.role);
+  const isAdmin = String(user?.role || "").toUpperCase() === "ADMIN";
 
   return (
     <Stack.Navigator>
@@ -67,6 +70,14 @@ export function AppStack() {
           <Stack.Screen name="AdminChangeCustomerEmail" component={AdminChangeCustomerEmailScreen} options={{ title: "Customer email" }} />
           <Stack.Screen name="SupportTickets" component={SupportTicketsListScreen} options={{ title: "Support tickets" }} />
           <Stack.Screen name="SupportTicketDetail" component={SupportTicketDetailScreen} options={{ title: "Ticket" }} />
+        </>
+      ) : null}
+
+      {/* Admin-only upgrades */}
+      {isAdmin ? (
+        <>
+          <Stack.Screen name="AdminUpgrades" component={AdminUpgradesScreen} options={{ title: "Extra / Upgrades" }} />
+          <Stack.Screen name="AdminUpgradeDetail" component={AdminUpgradeDetailScreen} options={{ title: "Feature" }} />
         </>
       ) : null}
 
