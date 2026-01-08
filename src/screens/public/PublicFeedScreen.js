@@ -13,6 +13,7 @@ import { getSupportRuntimeConfig } from "../../config/supportFlags";
 import { isAdminOrBusiness } from "../../utils/roles";
 import { isDeveloperUser } from "../../support/SupportPermissions";
 import { ensureSeedPosts, searchFeedPosts } from "../../feed";
+import { cloudSearchPublicFeedPosts } from "../../services/cloudFeedService";
 import { BUSINESSCAFE_DESCRIPTION_KEY, PRODUCT_NAME, selectBusinessCafePlaceholderImageKey } from "../../hub/BusinessCafeBranding";
 import { t } from "../../i18n/strings";
 
@@ -43,14 +44,14 @@ export function PublicFeedScreen({ navigation }) {
       return;
     }
 
-    if (backendMode === "MOCK") {
-      await ensureSeedPosts();
-    }
-
-    const list = await actions.safeCall(
-      () => searchFeedPosts({ query, includeAllForDeveloper: false }),
-      { title: "Feed" }
-    );
+    const list = await actions.safeCall(async () => {
+      if (backendMode === "MOCK") {
+        await ensureSeedPosts();
+        return searchFeedPosts({ query, includeAllForDeveloper: false });
+      }
+      // CLOUD: query Supabase safe view (authenticated-only by default).
+      return cloudSearchPublicFeedPosts({ query, limit: 60 });
+    }, { title: "Feed" });
 
     if (Array.isArray(list)) setPosts(list);
   }

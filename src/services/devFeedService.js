@@ -3,6 +3,7 @@ import { VISIBILITY_STATUS } from "../feed/FeedPlans";
 import { requireDeveloper } from "./rbac";
 import { AUDIT_ACTION_TYPES, logAudit } from "./auditService";
 import { normalizePinnedRank, normalizeTagList } from "../security/inputValidation";
+import { devRpcBulkReorderPins, devRpcUpdatePost } from "./devRpcService";
 
 function normalizeTags(list) {
   return normalizeTagList(list, { maxItems: 12, maxLen: 28, keepCase: true });
@@ -24,6 +25,11 @@ export async function devSearchPosts({ user, backendMode, developerUnlocked, que
 
 export async function devSetPostVisibility({ user, backendMode, developerUnlocked, postId, visibilityStatus, reason }) {
   requireDeveloper({ user, backendMode, developerUnlocked });
+
+  if (backendMode === "CLOUD") {
+    await devRpcUpdatePost({ postId, visibilityStatus, reason: String(reason || "").trim() || null });
+    return { ok: true };
+  }
 
   const patch = {
     visibilityStatus,
@@ -54,6 +60,12 @@ export async function devSetPostVisibility({ user, backendMode, developerUnlocke
 export async function devSetModerationTags({ user, backendMode, developerUnlocked, postId, moderationTags, reason }) {
   requireDeveloper({ user, backendMode, developerUnlocked });
 
+  if (backendMode === "CLOUD") {
+    const tags = normalizeTags(moderationTags);
+    await devRpcUpdatePost({ postId, moderationTags: tags, reason: String(reason || "").trim() || null });
+    return { ok: true };
+  }
+
   const tags = normalizeTags(moderationTags);
   const patch = {
     moderationTags: tags,
@@ -77,6 +89,12 @@ export async function devSetModerationTags({ user, backendMode, developerUnlocke
 export async function devSetPinnedRank({ user, backendMode, developerUnlocked, postId, pinnedRank, reason }) {
   requireDeveloper({ user, backendMode, developerUnlocked });
 
+  if (backendMode === "CLOUD") {
+    const rank = normalizePinnedRank(pinnedRank);
+    await devRpcUpdatePost({ postId, pinnedRank: rank, reason: String(reason || "").trim() || null });
+    return { ok: true };
+  }
+
   const rank = normalizePinnedRank(pinnedRank);
   const patch = {
     pinnedRank: rank,
@@ -99,6 +117,11 @@ export async function devSetPinnedRank({ user, backendMode, developerUnlocked, p
 
 export async function devCreateAnnouncement({ user, backendMode, developerUnlocked, title, html, tags }) {
   requireDeveloper({ user, backendMode, developerUnlocked });
+
+  if (backendMode === "CLOUD") {
+    // Not implemented yet: developer-authored platform posts require an explicit RPC.
+    throw new Error("CLOUD: Platform post creation is not configured yet.");
+  }
 
   const res = await createFeedPost({
     actor: user,
@@ -129,4 +152,20 @@ export async function devCreateAnnouncement({ user, backendMode, developerUnlock
   }
 
   return res;
+}
+
+export async function devBulkReorderPinnedRanks({ user, backendMode, developerUnlocked, items, reason }) {
+  requireDeveloper({ user, backendMode, developerUnlocked });
+  if (backendMode === "CLOUD") {
+    const list = Array.isArray(items) ? items : [];
+    const normalized = list
+      .map((x) => ({
+        post_id: x?.postId || x?.post_id,
+        pinned_rank: normalizePinnedRank(x?.pinnedRank ?? x?.pinned_rank),
+      }))
+      .filter((x) => typeof x.post_id === "string" && x.post_id.length > 0);
+    const count = await devRpcBulkReorderPins({ items: normalized, reason: String(reason || "").trim() || null });
+    return { ok: true, count };
+  }
+  throw new Error("MOCK: bulk reorder not wired");
 }

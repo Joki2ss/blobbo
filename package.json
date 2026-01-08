@@ -8,6 +8,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "supabase:smoke": "node scripts/supabase-smoke-test.js",
+    "supabase:onboarding-smoke": "node scripts/supabase-onboarding-smoke-test.js",
     "test": "node -e \"console.log('No tests configured.');\""
   },
   "dependencies": {
@@ -34,6 +36,8 @@
     "expo-secure-store": "~14.0.1",
     "expo-sharing": "~13.0.1",
     "expo-status-bar": "~2.0.1",
+    "dotenv": "^16.4.5",
+    "@supabase/supabase-js": "^2.49.1",
     "react": "18.3.1",
     "react-native": "0.76.9",
     "react-native-gesture-handler": "~2.20.2",

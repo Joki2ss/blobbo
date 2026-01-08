@@ -8,9 +8,10 @@ import { ListRow } from "../../components/ListRow";
 import { Badge } from "../../components/Badge";
 import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
+import { listDeletedThreadIds, markThreadDeleted } from "../../chat/ChatDeleteStore";
 
 export function ChatScreen({ navigation }) {
-  const { workspace } = useAppState();
+  const { workspace, session } = useAppState();
   const actions = useAppActions();
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -22,15 +23,19 @@ export function ChatScreen({ navigation }) {
 
   async function refresh() {
     if (!workspace?.id) return;
+    const userId = session?.user?.id || "";
     const [clients, threads] = await Promise.all([
       actions.backend.clients.list({ workspaceId: workspace.id }),
       actions.backend.chat.listThreads({ workspaceId: workspace.id }),
     ]);
 
+    const deleted = userId ? await listDeletedThreadIds({ userId }) : [];
+    const filteredThreads = Array.isArray(threads) ? threads.filter((t) => !deleted.includes(String(t.clientId))) : [];
+
     const map = {};
     for (const c of clients) map[c.id] = c;
     setClientsById(map);
-    setThreads(threads);
+    setThreads(filteredThreads);
   }
 
   useEffect(() => {
@@ -70,6 +75,12 @@ export function ChatScreen({ navigation }) {
                   actions.selectClient(t.clientId);
                   await actions.backend.chat.markThreadRead({ workspaceId: workspace.id, clientId: t.clientId });
                   navigation.navigate("ChatThread", { clientId: t.clientId });
+                }}
+                onLongPress={async () => {
+                  const userId = session?.user?.id || "";
+                  if (!userId) return;
+                  await markThreadDeleted({ userId, threadId: String(t.clientId) });
+                  await refresh();
                 }}
               />
             );

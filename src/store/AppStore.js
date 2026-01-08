@@ -132,6 +132,27 @@ export function AppProviders({ children }) {
     return {
       backend,
 
+      async patchSessionUser(patch) {
+        const current = state.session?.user;
+        if (!current) throw new Error("Not signed in");
+        const next = { ...current, ...(patch && typeof patch === "object" ? patch : {}) };
+        const session = { user: next };
+        await setJson(SESSION_KEY, session);
+        dispatch({ type: "SET_SESSION", session });
+
+        // Workspace might depend on role; keep best-effort selection.
+        try {
+          const allowed = await backend.workspaces.listForUser({ userId: next.id });
+          const ws = allowed?.[0] || (await backend.workspaces.getById({ workspaceId: next.workspaceId }));
+          if (ws) dispatch({ type: "SET_WORKSPACE", workspace: ws });
+        } catch {
+          // ignore
+        }
+
+        dispatch({ type: "SET_DEVELOPER_UNLOCKED", value: await isDeveloperSessionActive(next) });
+        return next;
+      },
+
       setCurrentScreen(screen) {
         dispatch({ type: "SET_CURRENT_SCREEN", screen });
       },

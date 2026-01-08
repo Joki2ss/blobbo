@@ -119,31 +119,33 @@ export function SettingsScreen({ navigation }) {
           ) : null}
         </Card>
 
-        <Card style={styles.card}>
-          <Text style={styles.title}>Developer mode</Text>
-          <Text style={styles.muted}>Backend mode</Text>
+        {isDevEmail ? (
+          <Card style={styles.card}>
+            <Text style={styles.title}>Developer mode</Text>
+            <Text style={styles.muted}>Backend mode</Text>
 
-          <View style={styles.row}>
-            <Pressable
-              onPress={() => actions.setBackendMode("MOCK")}
-              style={[styles.pill, backendMode === "MOCK" ? styles.pillActive : null]}
-            >
-              <Text style={[styles.pillText, backendMode === "MOCK" ? styles.pillTextActive : null]}>MOCK</Text>
-            </Pressable>
-            <Pressable
-              onPress={async () => {
-                await actions.setBackendMode("CLOUD");
-                Alert.alert(
-                  "Cloud backend",
-                  "Cloud backend is a skeleton. Configure keys in src/config/cloud.js. If not configured, screens will show a friendly error."
-                );
-              }}
-              style={[styles.pill, backendMode === "CLOUD" ? styles.pillActive : null]}
-            >
-              <Text style={[styles.pillText, backendMode === "CLOUD" ? styles.pillTextActive : null]}>CLOUD</Text>
-            </Pressable>
-          </View>
-        </Card>
+            <View style={styles.row}>
+              <Pressable
+                onPress={() => actions.setBackendMode("MOCK")}
+                style={[styles.pill, backendMode === "MOCK" ? styles.pillActive : null]}
+              >
+                <Text style={[styles.pillText, backendMode === "MOCK" ? styles.pillTextActive : null]}>MOCK</Text>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  await actions.setBackendMode("CLOUD");
+                  Alert.alert(
+                    "Cloud backend",
+                    "Cloud backend is a skeleton. Configure keys in src/config/cloud.js. If not configured, screens will show a friendly error."
+                  );
+                }}
+                style={[styles.pill, backendMode === "CLOUD" ? styles.pillActive : null]}
+              >
+                <Text style={[styles.pillText, backendMode === "CLOUD" ? styles.pillTextActive : null]}>CLOUD</Text>
+              </Pressable>
+            </View>
+          </Card>
+        ) : null}
 
         {isDevEmail ? (
           <Card style={styles.card}>

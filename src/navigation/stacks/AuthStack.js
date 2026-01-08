@@ -4,6 +4,9 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { LoginScreen } from "../../screens/auth/LoginScreen";
 import { RegisterScreen } from "../../screens/auth/RegisterScreen";
 import { ForgotPasswordScreen } from "../../screens/auth/ForgotPasswordScreen";
+import { SignupRoleChoiceScreen } from "../../screens/SignupRoleChoiceScreen";
+import { CustomerSignupScreen } from "../../screens/auth/CustomerSignupScreen";
+import { ProSignupScreen } from "../../screens/auth/ProSignupScreen";
 import { BusinessSignupLazyScreen, MapSearchLazyScreen, PublicFeedLazyScreen, PublicStorefrontLazyScreen } from "../../screens/public";
 import { FindAProScreen } from "../../screens/FindAProScreen";
 
@@ -12,6 +15,9 @@ const Stack = createNativeStackNavigator();
 export function AuthStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="SignupRoleChoice" component={SignupRoleChoiceScreen} />
+      <Stack.Screen name="CustomerSignup" component={CustomerSignupScreen} />
+      <Stack.Screen name="ProSignup" component={ProSignupScreen} />
       <Stack.Screen name="PublicFeed" component={PublicFeedLazyScreen} />
       <Stack.Screen name="MapSearch" component={MapSearchLazyScreen} />
       <Stack.Screen name="FindAPro" component={FindAProScreen} />

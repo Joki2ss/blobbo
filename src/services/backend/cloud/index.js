@@ -1,5 +1,8 @@
 import { CLOUD_PROVIDER } from "../../../config/cloud";
 
+import { cloudForgotPassword, cloudLogin, cloudRegister } from "../../cloudAuthService";
+import { cloudUpdateMyProfile } from "../../cloudProfileService";
+
 function notConfigured() {
   const provider = CLOUD_PROVIDER;
   const base = "Cloud backend is not configured";
@@ -9,27 +12,31 @@ function notConfigured() {
 export const cloudBackend = {
   mode: "CLOUD",
   auth: {
-    async login() {
-      throw notConfigured();
+    async login({ email, password }) {
+      return cloudLogin({ email, password });
     },
-    async register() {
-      throw notConfigured();
+    async register({ email, password, phone, fullName, firstName, lastName }) {
+      // Keep signature compatible with AppStore.register.
+      // Accept extra identity fields (customer flow) while remaining backward-compatible.
+      return cloudRegister({ email, password, phone, fullName, firstName, lastName });
     },
-    async forgotPassword() {
-      throw notConfigured();
+    async forgotPassword({ email }) {
+      return cloudForgotPassword({ email });
     },
   },
   workspaces: {
     async listForUser() {
-      throw notConfigured();
+      // Minimal placeholder to keep the app navigable in CLOUD mode.
+      return [{ id: "ws_cloud", name: "Cloud" }];
     },
-    async getById() {
-      throw notConfigured();
+    async getById({ workspaceId }) {
+      return { id: workspaceId || "ws_cloud", name: "Cloud" };
     },
   },
   clients: {
     async list() {
-      throw notConfigured();
+      // Not implemented in CLOUD yet.
+      return [];
     },
     async getById() {
       throw notConfigured();
@@ -40,10 +47,11 @@ export const cloudBackend = {
   },
   chat: {
     async listThreads() {
-      throw notConfigured();
+      // Not implemented in CLOUD yet.
+      return [];
     },
     async listMessages() {
-      throw notConfigured();
+      return [];
     },
     async sendMessage() {
       throw notConfigured();
@@ -55,12 +63,12 @@ export const cloudBackend = {
       throw notConfigured();
     },
     async markThreadRead() {
-      throw notConfigured();
+      return { ok: true };
     },
   },
   activity: {
     async list() {
-      throw notConfigured();
+      return [];
     },
   },
   documents: {
@@ -89,8 +97,8 @@ export const cloudBackend = {
     async getByClientId() {
       throw notConfigured();
     },
-    async updateProfile() {
-      throw notConfigured();
+    async updateProfile(params) {
+      return cloudUpdateMyProfile(params);
     },
     async listPublicStorefronts() {
       throw notConfigured();

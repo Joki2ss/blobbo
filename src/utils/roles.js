@@ -9,7 +9,8 @@ export function isAdminOrBusiness(role) {
 
 export function isCustomerOrStaff(role) {
   const r = String(role || "").toUpperCase();
-  return r === "CLIENT" || r === "CUSTOMER" || r === "STAFF";
+  // In CLOUD/Supabase the default role is USER; treat it as Customer for the public app experience.
+  return r === "USER" || r === "CLIENT" || r === "CUSTOMER" || r === "STAFF";
 }
 
 export function toSupportRole(role) {
