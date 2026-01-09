@@ -9,9 +9,10 @@ import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { isAdminOrBusiness, isCustomerOrStaff } from "../../utils/roles";
 import { getStorefrontAddressMissingFields, hasCompleteStorefrontAddress } from "../../storefront/storefrontValidation";
+import { beginUpgradeToPro } from "../../services/onboardingService";
 
 export function ProfileScreen({ navigation }) {
-  const { session, workspace } = useAppState();
+  const { session, workspace, backendMode } = useAppState();
   const actions = useAppActions();
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -41,13 +42,26 @@ export function ProfileScreen({ navigation }) {
 
   const [requestedEmail, setRequestedEmail] = useState("");
   const [saving, setSaving] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
 
   const isCustomer = isCustomerOrStaff(user?.role);
   const isAdmin = isAdminOrBusiness(user?.role);
 
   const planLabel = useMemo(() => {
-    return isCustomer ? "Customer plan: Lifetime Free" : "Admin account";
+    if (isCustomer) return "Customer plan: Lifetime Free";
+    return "Pro account";
   }, [isCustomer]);
+
+  async function upgradeToPro() {
+    if (!user?.id) return;
+    setUpgrading(true);
+    await actions.safeCall(
+      () => beginUpgradeToPro({ backendMode, actions, reason: "upgrade_cta" }),
+      { title: "Upgrade" }
+    );
+    setUpgrading(false);
+    // AppStack will switch to Pro and force onboarding.
+  }
 
   async function saveProfile() {
     if (!workspace?.id || !user?.id) return;
@@ -139,7 +153,6 @@ export function ProfileScreen({ navigation }) {
               <TextField label="Last name (optional)" value={lastName} onChangeText={setLastName} placeholder="Surname" />
             </>
           ) : null}
-          <TextField label="Phone" value={phone} onChangeText={setPhone} placeholder="+1 ..." />
           <TextField
             label="Profile photo URL (optional)"
             value={photoUri}
@@ -207,6 +220,14 @@ export function ProfileScreen({ navigation }) {
             <Text style={styles.section}>Request email change</Text>
             <TextField label="New email" value={requestedEmail} onChangeText={setRequestedEmail} placeholder="new@email.com" />
             <Button title="Request" variant="secondary" onPress={requestEmailChange} />
+          </Card>
+        ) : null}
+
+        {isCustomer ? (
+          <Card style={styles.card}>
+            <Text style={styles.section}>Upgrade</Text>
+            <Text style={styles.notice}>Upgrade to Pro – €50/month (7-day free trial)</Text>
+            <Button title={upgrading ? "Upgrading..." : "Upgrade to Pro"} onPress={upgradeToPro} loading={upgrading} />
           </Card>
         ) : null}
 

@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, useWindowDimensions } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, useWindowDimensions, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Screen } from "../../components/Screen";
 import { Header } from "../../components/Header";
+import { SmartHeader } from "../../ui/components/SmartHeader";
 import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
@@ -13,6 +14,7 @@ import { getSupportRuntimeConfig } from "../../config/supportFlags";
 import { isAdminOrBusiness } from "../../utils/roles";
 import { isDeveloperUser } from "../../support/SupportPermissions";
 import { ensureSeedPosts, searchFeedPosts } from "../../feed";
+import { cloudSearchPublicFeedPosts } from "../../services/cloudFeedService";
 import { BUSINESSCAFE_DESCRIPTION_KEY, PRODUCT_NAME, selectBusinessCafePlaceholderImageKey } from "../../hub/BusinessCafeBranding";
 import { t } from "../../i18n/strings";
 
@@ -32,10 +34,10 @@ export function PublicFeedScreen({ navigation }) {
   const canCreate = useMemo(() => {
     if (!user) return false;
     if (isAdminOrBusiness(user.role)) return true;
-    return developerUnlocked && isDeveloperUser(user);
-  }, [user?.id, user?.role, developerUnlocked]);
+    return isDeveloperUser(user);
+  }, [user?.id, user?.role]);
 
-  const isDev = useMemo(() => developerUnlocked && isDeveloperUser(user), [developerUnlocked, user?.email]);
+  const isDev = useMemo(() => isDeveloperUser(user), [user?.role]);
 
   async function refresh() {
     if (!cfg.PUBLIC_FEED_ENABLED) {
@@ -43,14 +45,14 @@ export function PublicFeedScreen({ navigation }) {
       return;
     }
 
-    if (backendMode === "MOCK") {
-      await ensureSeedPosts();
-    }
-
-    const list = await actions.safeCall(
-      () => searchFeedPosts({ query, includeAllForDeveloper: false }),
-      { title: "Feed" }
-    );
+    const list = await actions.safeCall(async () => {
+      if (backendMode === "MOCK") {
+        await ensureSeedPosts();
+        return searchFeedPosts({ query, includeAllForDeveloper: false });
+      }
+      // CLOUD: query Supabase safe view (authenticated-only by default).
+      return cloudSearchPublicFeedPosts({ query, limit: 60 });
+    }, { title: "Feed" });
 
     if (Array.isArray(list)) setPosts(list);
   }
@@ -61,9 +63,13 @@ export function PublicFeedScreen({ navigation }) {
 
   const placeholderKey = useMemo(() => selectBusinessCafePlaceholderImageKey({ width: dims.width }), [dims.width]);
 
+  // Patch (B): SmartHeader hide/show on scroll
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const HEADER_MAX_Y = 80;
+
   return (
     <Screen>
-      <Header
+      <SmartHeader
         title={PRODUCT_NAME}
         subtitle={t(BUSINESSCAFE_DESCRIPTION_KEY)}
         right={
@@ -92,9 +98,18 @@ export function PublicFeedScreen({ navigation }) {
             </View>
           ) : null
         }
+        scrollY={scrollY}
+        maxY={HEADER_MAX_Y}
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <Animated.ScrollView
+        contentContainerStyle={styles.content}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+      >
         {!cfg.PUBLIC_FEED_ENABLED ? (
           <Card>
             <Text style={styles.h}>Public feed disabled</Text>
@@ -143,8 +158,14 @@ export function PublicFeedScreen({ navigation }) {
                 <Card key={p.postId} style={styles.card}>
                   <View style={styles.rowTop}>
                     <View style={{ flex: 1 }}>
+                      {String(p.authorRole || "").toUpperCase() === "DEVELOPER" ? (
+                        <Text style={styles.platformLabel}>Platform update</Text>
+                      ) : null}
                       <Text style={styles.title}>{p.title}</Text>
-                      <Text style={styles.meta}>{p.ownerBusinessName} • {p.ownerCategory}{p.location ? ` • ${p.location.city || p.location.region}` : ""}</Text>
+                      <Text style={styles.meta}>
+                        {String(p.authorRole || "").toUpperCase() === "DEVELOPER" ? "Platform" : p.ownerBusinessName} • {p.ownerCategory}
+                        {p.location ? ` • ${p.location.city || p.location.region}` : ""}
+                      </Text>
                     </View>
                     {user && (isDev || p.ownerUserId === user.id) ? (
                       <Pressable
@@ -167,6 +188,12 @@ export function PublicFeedScreen({ navigation }) {
                   <Text style={styles.desc} numberOfLines={6}>
                     {stripHtml(p.description)}
                   </Text>
+
+                  {Array.isArray(p.moderationTags) && p.moderationTags.length > 0 ? (
+                    <View style={styles.moderationRow}>
+                      <Text style={styles.moderationText}>{p.moderationTags.join(" ")}</Text>
+                    </View>
+                  ) : null}
 
                   {Array.isArray(p.keywords) && p.keywords.length > 0 ? (
                     <View style={styles.chips}>
@@ -245,6 +272,11 @@ function makeStyles(theme) {
       ...theme.typography.h3,
       color: theme.colors.text,
     },
+    platformLabel: {
+      ...theme.typography.small,
+      color: theme.colors.mutedText,
+      marginBottom: 4,
+    },
     meta: {
       ...theme.typography.small,
       color: theme.colors.mutedText,
@@ -254,6 +286,18 @@ function makeStyles(theme) {
       ...theme.typography.body,
       color: theme.colors.text,
       marginTop: theme.spacing.sm,
+    },
+    moderationRow: {
+      marginTop: theme.spacing.sm,
+      alignSelf: "flex-start",
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: 6,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.chipBg,
+    },
+    moderationText: {
+      ...theme.typography.small,
+      color: theme.colors.text,
     },
     imgRow: {
       marginTop: theme.spacing.sm,

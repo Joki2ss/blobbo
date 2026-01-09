@@ -53,9 +53,26 @@ function normalizeImages(list) {
 
 function computeVisibilityStatus(post, now) {
   if (!post) return VISIBILITY_STATUS.PAUSED;
+  if (post.visibilityStatus === VISIBILITY_STATUS.DELETED) return VISIBILITY_STATUS.DELETED;
   if (post.visibilityStatus === VISIBILITY_STATUS.PAUSED) return VISIBILITY_STATUS.PAUSED;
   if (post.expiresAt && now > post.expiresAt) return VISIBILITY_STATUS.EXPIRED;
   return VISIBILITY_STATUS.ACTIVE;
+}
+
+function normalizeModerationTags(list) {
+  const src = Array.isArray(list) ? list : [];
+  const out = [];
+  const seen = new Set();
+  for (const t of src) {
+    const s = String(t || "").trim();
+    if (!s) continue;
+    if (s.length > 28) continue;
+    if (seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+    if (out.length >= 12) break;
+  }
+  return out;
 }
 
 function enforceOwnerQuotas({ posts, ownerUserId, planType, now }) {
@@ -131,6 +148,14 @@ export async function listFeedPosts({ includeAllForDeveloper = false } = {}) {
     : posts.filter((p) => computeVisibilityStatus(p, now) === VISIBILITY_STATUS.ACTIVE);
 
   return visible.sort((a, b) => {
+    // pinned first (ascending pinnedRank)
+    const ap = Number.isFinite(Number(a.pinnedRank)) ? Number(a.pinnedRank) : null;
+    const bp = Number.isFinite(Number(b.pinnedRank)) ? Number(b.pinnedRank) : null;
+    const aPinned = ap !== null;
+    const bPinned = bp !== null;
+    if (aPinned !== bPinned) return aPinned ? -1 : 1;
+    if (aPinned && bPinned && ap !== bp) return ap - bp;
+
     // plan priority desc, rankingScore desc, recency desc
     const pa = PLAN_PRIORITY[a.planType] || 0;
     const pb = PLAN_PRIORITY[b.planType] || 0;
@@ -201,6 +226,11 @@ export async function createFeedPost({
     planType,
     visibilityStatus: VISIBILITY_STATUS.ACTIVE,
     rankingScore: Number.isFinite(Number(post?.rankingScore)) ? Number(post.rankingScore) : computeInitialRankingScore({ planType, createdAt }),
+    pinnedRank: Number.isFinite(Number(post?.pinnedRank)) ? Number(post.pinnedRank) : null,
+    moderationTags: normalizeModerationTags(post?.moderationTags),
+    lastModeratedByUserId: "",
+    lastModeratedAt: null,
+    authorRole: typeof post?.authorRole === "string" ? String(post.authorRole).trim().toUpperCase() : (actor?.role ? String(actor.role).trim().toUpperCase() : ""),
     location: post?.location && (post.location.city || post.location.region)
       ? {
           city: post.location.city ? String(post.location.city).slice(0, 50) : "",
@@ -291,6 +321,15 @@ export async function updateFeedPost({ actor, postId, patch, allowDeveloperOverr
     if (typeof patch?.ownerBusinessName === "string") next.ownerBusinessName = String(patch.ownerBusinessName).trim().slice(0, 60);
     if (typeof patch?.ownerCategory === "string") next.ownerCategory = String(patch.ownerCategory).trim().slice(0, 40);
     if (typeof patch?.ownerUserId === "string") next.ownerUserId = String(patch.ownerUserId);
+
+    if ("pinnedRank" in (patch || {})) {
+      const r = patch.pinnedRank === null || patch.pinnedRank === "" ? null : Number(patch.pinnedRank);
+      next.pinnedRank = Number.isFinite(r) ? r : null;
+    }
+    if (Array.isArray(patch?.moderationTags)) next.moderationTags = normalizeModerationTags(patch.moderationTags);
+    if (typeof patch?.lastModeratedByUserId === "string") next.lastModeratedByUserId = String(patch.lastModeratedByUserId);
+    if (typeof patch?.lastModeratedAt !== "undefined") next.lastModeratedAt = patch.lastModeratedAt ? Number(patch.lastModeratedAt) : null;
+    if (typeof patch?.authorRole === "string") next.authorRole = String(patch.authorRole).trim().toUpperCase();
   }
 
   posts[idx] = next;

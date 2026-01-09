@@ -22,6 +22,13 @@ import {
   listFeedPosts,
   updateFeedPost,
 } from "../../feed";
+import {
+  cloudCreateFeedPost,
+  cloudDeleteFeedPost,
+  cloudGetFeedPostById,
+  cloudUpdateFeedPost,
+} from "../../services/cloudFeedService";
+import { devRpcUpdatePost } from "../../services/devRpcService";
 import { FeedRichTextEditor } from "../../feed/FeedRichTextEditor";
 
 const CATEGORY_PRESETS = ["lawyer", "accountant", "doctor", "artisan", "consultant", "therapist", "trainer"];
@@ -39,7 +46,7 @@ export function PostEditorScreen({ navigation, route }) {
   const postId = route?.params?.postId || null;
   const devPlan = route?.params?.devPlan || null;
 
-  const isDev = useMemo(() => developerUnlocked && isDeveloperUser(user), [developerUnlocked, user?.email]);
+  const isDev = useMemo(() => isDeveloperUser(user), [user?.role]);
   const canCreate = useMemo(() => {
     if (!user) return false;
     if (isAdminOrBusiness(user.role)) return true;
@@ -102,8 +109,13 @@ export function PostEditorScreen({ navigation, route }) {
 
     let mounted = true;
     (async () => {
-      const all = await actions.safeCall(() => listFeedPosts({ includeAllForDeveloper: isDev }), { title: "Feed" });
-      const found = Array.isArray(all) ? all.find((p) => p.postId === postId) : null;
+      const found = await actions.safeCall(async () => {
+        if (backendMode === "CLOUD") {
+          return cloudGetFeedPostById({ postId, asDeveloper: isDev });
+        }
+        const all = await listFeedPosts({ includeAllForDeveloper: isDev });
+        return Array.isArray(all) ? all.find((p) => p.postId === postId) : null;
+      }, { title: "Feed" });
       if (!mounted) return;
       setExisting(found || null);
       if (found) {
@@ -227,6 +239,26 @@ export function PostEditorScreen({ navigation, route }) {
     };
 
     const res = await actions.safeCall(async () => {
+      if (backendMode === "CLOUD") {
+        if (mode === "create") {
+          // CLOUD: owners create their own post. Dev impersonation is intentionally not supported.
+          return cloudCreateFeedPost({ post: { ...payload, authorRole: user?.role } });
+        }
+
+        // CLOUD: update content via table update (owner policy). Developer moderation fields via RPC.
+        const updated = await cloudUpdateFeedPost({ postId, patch: payload });
+        if (isDev) {
+          await devRpcUpdatePost({
+            postId,
+            visibilityStatus: visibilityStatus,
+            pinnedRank: null,
+            moderationTags: null,
+            reason: "editor",
+          });
+        }
+        return updated;
+      }
+
       if (mode === "create") {
         return createFeedPost({
           actor: user,
@@ -264,10 +296,13 @@ export function PostEditorScreen({ navigation, route }) {
   async function del() {
     if (!existing || !user) return;
     setLoading(true);
-    const res = await actions.safeCall(
-      () => deleteFeedPost({ actor: user, postId: existing.postId, allowDeveloperOverride: isDev }),
-      { title: "Delete" }
-    );
+    const res = await actions.safeCall(async () => {
+      if (backendMode === "CLOUD") {
+        // Owner delete requires the cloud delete policy (migration 20260107121500).
+        return cloudDeleteFeedPost({ postId: existing.postId });
+      }
+      return deleteFeedPost({ actor: user, postId: existing.postId, allowDeveloperOverride: isDev });
+    }, { title: "Delete" });
     setLoading(false);
     if (res?.ok) navigation.goBack();
   }
@@ -330,7 +365,7 @@ export function PostEditorScreen({ navigation, route }) {
           <View style={styles.chips}>
             {keywords.map((k) => (
               <Pressable key={k} onPress={() => setKeywords(keywords.filter((x) => x !== k))} style={({ pressed }) => [styles.chip, pressed ? { opacity: 0.85 } : null]}>
-                <Text style={styles.chipText}>#{k}  ×</Text>
+                <Text style={styles.chipText}>#{k}  Ã—</Text>
               </Pressable>
             ))}
           </View>

@@ -11,6 +11,8 @@ import { useAppActions, useAppState } from "../../store/AppStore";
 import { getSupportRuntimeConfig } from "../../config/supportFlags";
 import { isDeveloperUser } from "../../support/SupportPermissions";
 import { listFeedPosts, PLAN_TYPES, VISIBILITY_STATUS, updateFeedPost } from "../../feed";
+import { cloudListAllFeedPostsForDeveloper } from "../../services/cloudFeedService";
+import { devRpcUpdatePost } from "../../services/devRpcService";
 
 export function DeveloperFeedControlScreen({ navigation }) {
   const { backendMode, session, developerUnlocked } = useAppState();
@@ -20,14 +22,19 @@ export function DeveloperFeedControlScreen({ navigation }) {
   const user = session?.user || null;
 
   const cfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
-  const isDev = useMemo(() => developerUnlocked && isDeveloperUser(user), [developerUnlocked, user?.email]);
+  const isDev = useMemo(() => isDeveloperUser(user), [user?.role]);
 
   const [posts, setPosts] = useState([]);
 
   async function refresh() {
     if (!cfg.PUBLIC_FEED_ENABLED) return;
     if (!isDev) return;
-    const list = await actions.safeCall(() => listFeedPosts({ includeAllForDeveloper: true }), { title: "Feed" });
+    const list = await actions.safeCall(async () => {
+      if (backendMode === "CLOUD") {
+        return cloudListAllFeedPostsForDeveloper({ limit: 200 });
+      }
+      return listFeedPosts({ includeAllForDeveloper: true });
+    }, { title: "Feed" });
     if (Array.isArray(list)) setPosts(list);
   }
 
@@ -37,10 +44,13 @@ export function DeveloperFeedControlScreen({ navigation }) {
 
   async function togglePause(post) {
     const next = post.visibilityStatus === VISIBILITY_STATUS.PAUSED ? VISIBILITY_STATUS.ACTIVE : VISIBILITY_STATUS.PAUSED;
-    await actions.safeCall(
-      () => updateFeedPost({ actor: user, postId: post.postId, patch: { visibilityStatus: next }, allowDeveloperOverride: true }),
-      { title: "Update" }
-    );
+    await actions.safeCall(async () => {
+      if (backendMode === "CLOUD") {
+        await devRpcUpdatePost({ postId: post.postId, visibilityStatus: next, reason: "dev_toggle" });
+        return;
+      }
+      return updateFeedPost({ actor: user, postId: post.postId, patch: { visibilityStatus: next }, allowDeveloperOverride: true });
+    }, { title: "Update" });
     refresh();
   }
 
@@ -87,7 +97,7 @@ export function DeveloperFeedControlScreen({ navigation }) {
             <Card key={p.postId} style={styles.card}>
               <ListRow
                 title={p.title}
-                subtitle={`${p.ownerBusinessName} • ${p.planType} • ${p.visibilityStatus} • score ${p.rankingScore}`}
+                subtitle={`${p.ownerBusinessName} â€¢ ${p.planType} â€¢ ${p.visibilityStatus} â€¢ score ${p.rankingScore}`}
                 onPress={() => navigation.navigate("PostEditor", { mode: "edit", postId: p.postId })}
               />
               <View style={styles.rowButtons}>

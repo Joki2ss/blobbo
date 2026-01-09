@@ -1,5 +1,6 @@
 import { getJson, setJson } from "../../storage";
 import { createId } from "../../../utils/id";
+import { ensureSeedDevUser, ensureSeedDemoPasswords } from "../../../mock/seedDevUser";
 
 const DB_KEY = "sxr_mock_db_v1";
 
@@ -21,7 +22,7 @@ export async function loadDb() {
       email: "admin@acme.com",
       phone: "+1 555 0100",
       photoUri: "",
-      password: "password",
+      password: "",
     },
     {
       // Demo multi-tenant admin (member of multiple workspaces)
@@ -32,7 +33,7 @@ export async function loadDb() {
       email: "admin@demo.com",
       phone: "+1 555 0999",
       photoUri: "",
-      password: "password",
+      password: "",
     },
     {
       id: "u_client_acme",
@@ -42,7 +43,7 @@ export async function loadDb() {
       email: "client@acme.com",
       phone: "+1 555 0101",
       photoUri: "",
-      password: "password",
+      password: "",
       clientId: "c_acme_1",
     },
     {
@@ -53,17 +54,18 @@ export async function loadDb() {
       email: "admin@beta.com",
       phone: "+1 555 0200",
       photoUri: "",
-      password: "password",
+      password: "",
     },
     {
       id: "u_dev",
       workspaceId: ws1.id,
       role: "DEVELOPER",
       fullName: "Dev User",
-      email: "contact-smi@proton.me",
+      email: "",
       phone: "+1 555 0300",
       photoUri: "",
-      password: "password",
+      password: "",
+      isHiddenFromPublic: true,
     },
     {
       id: "u_business_roma",
@@ -73,7 +75,7 @@ export async function loadDb() {
       email: "pro@studionova.demo",
       phone: "+39 06 0000",
       photoUri: "",
-      password: "password",
+      password: "",
       storefrontBusinessName: "Studio Nova",
       storefrontCategory: "Hair & Beauty",
       storefrontTags: ["color", "cut", "styling"],
@@ -96,7 +98,7 @@ export async function loadDb() {
       email: "pro@northside.demo",
       phone: "+39 02 0000",
       photoUri: "",
-      password: "password",
+      password: "",
       storefrontBusinessName: "Northside Repairs",
       storefrontCategory: "Home Services",
       storefrontTags: ["plumbing", "electric", "repairs"],
@@ -228,6 +230,10 @@ export async function loadDb() {
     supportRequests: [],
     audit: [],
   };
+
+  // Security: ensure DEVELOPER seed is hidden from public and password is generated at runtime (not in git).
+  await ensureSeedDevUser(db);
+  await ensureSeedDemoPasswords(db);
 
   await setJson(DB_KEY, db);
   return db;

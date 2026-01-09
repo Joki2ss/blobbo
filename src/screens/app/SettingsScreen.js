@@ -27,6 +27,7 @@ export function SettingsScreen({ navigation }) {
   const user = session?.user;
   const supportCfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
   const isDevEmail = useMemo(() => isDeveloperUser(user), [user?.email]);
+  const isAdmin = useMemo(() => String(user?.role || "").toUpperCase() === "ADMIN", [user?.role]);
 
   useEffect(() => {
     let mounted = true;
@@ -76,6 +77,13 @@ export function SettingsScreen({ navigation }) {
           <View style={{ height: theme.spacing.md }} />
           <Button title="Profile" variant="secondary" onPress={() => navigation.navigate("Profile")} />
 
+          {isAdmin ? (
+            <>
+              <View style={{ height: theme.spacing.sm }} />
+              <Button title="Extra / Upgrades" variant="secondary" onPress={() => navigation.navigate("AdminUpgrades")} />
+            </>
+          ) : null}
+
           {supportCfg.DOCUMENT_EDITOR_ENABLED && isAdminOrBusiness(user?.role) ? (
             <>
               <View style={{ height: theme.spacing.sm }} />
@@ -102,8 +110,6 @@ export function SettingsScreen({ navigation }) {
                 </Pressable>
               ))}
             </View>
-
-            <Text style={styles.muted}>Demo multi-tenant admin: admin@demo.com / password</Text>
           </Card>
         ) : null}
 
@@ -119,31 +125,33 @@ export function SettingsScreen({ navigation }) {
           ) : null}
         </Card>
 
-        <Card style={styles.card}>
-          <Text style={styles.title}>Developer mode</Text>
-          <Text style={styles.muted}>Backend mode</Text>
+        {isDevEmail ? (
+          <Card style={styles.card}>
+            <Text style={styles.title}>Developer mode</Text>
+            <Text style={styles.muted}>Backend mode</Text>
 
-          <View style={styles.row}>
-            <Pressable
-              onPress={() => actions.setBackendMode("MOCK")}
-              style={[styles.pill, backendMode === "MOCK" ? styles.pillActive : null]}
-            >
-              <Text style={[styles.pillText, backendMode === "MOCK" ? styles.pillTextActive : null]}>MOCK</Text>
-            </Pressable>
-            <Pressable
-              onPress={async () => {
-                await actions.setBackendMode("CLOUD");
-                Alert.alert(
-                  "Cloud backend",
-                  "Cloud backend is a skeleton. Configure keys in src/config/cloud.js. If not configured, screens will show a friendly error."
-                );
-              }}
-              style={[styles.pill, backendMode === "CLOUD" ? styles.pillActive : null]}
-            >
-              <Text style={[styles.pillText, backendMode === "CLOUD" ? styles.pillTextActive : null]}>CLOUD</Text>
-            </Pressable>
-          </View>
-        </Card>
+            <View style={styles.row}>
+              <Pressable
+                onPress={() => actions.setBackendMode("MOCK")}
+                style={[styles.pill, backendMode === "MOCK" ? styles.pillActive : null]}
+              >
+                <Text style={[styles.pillText, backendMode === "MOCK" ? styles.pillTextActive : null]}>MOCK</Text>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  await actions.setBackendMode("CLOUD");
+                  Alert.alert(
+                    "Cloud backend",
+                    "Cloud backend is a skeleton. Configure keys in src/config/cloud.js. If not configured, screens will show a friendly error."
+                  );
+                }}
+                style={[styles.pill, backendMode === "CLOUD" ? styles.pillActive : null]}
+              >
+                <Text style={[styles.pillText, backendMode === "CLOUD" ? styles.pillTextActive : null]}>CLOUD</Text>
+              </Pressable>
+            </View>
+          </Card>
+        ) : null}
 
         {isDevEmail ? (
           <Card style={styles.card}>
