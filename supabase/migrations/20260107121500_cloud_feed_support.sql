@@ -8,7 +8,11 @@ alter table public.feed_posts
   add column if not exists location jsonb;
 
 -- 2) Recreate the public view to include these columns
-create or replace view public.public_feed_posts
+-- NOTE: Postgres cannot change column names/order with CREATE OR REPLACE VIEW.
+-- Drop first to allow evolution of the view definition.
+drop view if exists public.public_feed_posts;
+
+create view public.public_feed_posts
 with (security_invoker = true)
 as
 select

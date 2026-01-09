@@ -4,8 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { Screen } from "../../components/Screen";
 import { Header } from "../../components/Header";
-import { ListRow } from "../../components/ListRow";
-import { Badge } from "../../components/Badge";
+import { ChatSelection } from "../../ui/components/ChatSelection";
 import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
 import { listDeletedThreadIds, markThreadDeleted } from "../../chat/ChatDeleteStore";
@@ -66,21 +65,15 @@ export function ChatScreen({ navigation }) {
             const c = clientsById[t.clientId];
             const title = c?.name || `Client ${t.clientId}`;
             return (
-              <ListRow
+              <ChatSelection
                 key={t.clientId}
                 title={title}
                 subtitle={t.lastText}
-                badge={<Badge count={t.unreadCount} />}
+                unreadCount={t.unreadCount}
                 onPress={async () => {
                   actions.selectClient(t.clientId);
                   await actions.backend.chat.markThreadRead({ workspaceId: workspace.id, clientId: t.clientId });
                   navigation.navigate("ChatThread", { clientId: t.clientId });
-                }}
-                onLongPress={async () => {
-                  const userId = session?.user?.id || "";
-                  if (!userId) return;
-                  await markThreadDeleted({ userId, threadId: String(t.clientId) });
-                  await refresh();
                 }}
               />
             );

@@ -110,8 +110,6 @@ export function SettingsScreen({ navigation }) {
                 </Pressable>
               ))}
             </View>
-
-            <Text style={styles.muted}>Demo multi-tenant admin: admin@demo.com / password</Text>
           </Card>
         ) : null}
 

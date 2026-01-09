@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, useWindowDimensions } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, useWindowDimensions, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Screen } from "../../components/Screen";
 import { Header } from "../../components/Header";
+import { SmartHeader } from "../../ui/components/SmartHeader";
 import { Card } from "../../components/Card";
 import { TextField } from "../../components/TextField";
 import { Button } from "../../components/Button";
@@ -62,9 +63,13 @@ export function PublicFeedScreen({ navigation }) {
 
   const placeholderKey = useMemo(() => selectBusinessCafePlaceholderImageKey({ width: dims.width }), [dims.width]);
 
+  // Patch (B): SmartHeader hide/show on scroll
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const HEADER_MAX_Y = 80;
+
   return (
     <Screen>
-      <Header
+      <SmartHeader
         title={PRODUCT_NAME}
         subtitle={t(BUSINESSCAFE_DESCRIPTION_KEY)}
         right={
@@ -93,9 +98,18 @@ export function PublicFeedScreen({ navigation }) {
             </View>
           ) : null
         }
+        scrollY={scrollY}
+        maxY={HEADER_MAX_Y}
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <Animated.ScrollView
+        contentContainerStyle={styles.content}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+      >
         {!cfg.PUBLIC_FEED_ENABLED ? (
           <Card>
             <Text style={styles.h}>Public feed disabled</Text>

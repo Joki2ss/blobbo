@@ -181,6 +181,10 @@ values (
 )
 on conflict (feature_id) do nothing;
 
+-- NOTE: This helper is intentionally replaced by the follow-up fix migration
+-- 20260108161000_fix_admin_upgrades_rpcs.sql.
+-- That migration changes the return type to boolean and rewrites the admin RPCs
+-- to avoid relying on a void-returning function inside SQL expressions.
 create or replace function private.require_admin()
 returns void
 language plpgsql

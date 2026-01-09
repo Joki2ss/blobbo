@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import { useAppState } from "../../store/AppStore";
 import { CustomerTabNavigator } from "../tabs/CustomerTabNavigator";
-import { ProHomeGateScreen } from "../../screens/app/ProHomeGateScreen";
+import { LayoutRouter } from "../../ui/components/LayoutRouter";
 import { ClientDetailScreen } from "../../screens/app/ClientDetailScreen";
 import { ChatThreadScreen } from "../../screens/app/ChatThreadScreen";
 import { NewClientScreen } from "../../screens/app/NewClientScreen";
@@ -44,7 +44,8 @@ export function AppStack() {
 
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Home" component={isPro ? ProHomeGateScreen : CustomerTabNavigator} options={{ headerShown: false }} />
+      {/* Patch (C): Use LayoutRouter for main app layout routing */}
+      <Stack.Screen name="Home" component={LayoutRouter} options={{ headerShown: false }} />
 
       {/* Customer-allowed public browsing */}
       <Stack.Screen name="PublicFeed" component={PublicFeedLazyScreen} options={{ title: "Discover" }} />
