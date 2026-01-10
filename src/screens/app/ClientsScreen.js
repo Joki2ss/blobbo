@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 
 import { Screen } from "../../components/Screen";
-import { Header } from "../../components/Header";
+import PageHeader from "../../ui/admin/PageHeader";
+import AdminCard from "../../ui/admin/AdminCard";
+import AdminTable from "../../ui/admin/AdminTable";
 import { TextField } from "../../components/TextField";
 import { ListRow } from "../../components/ListRow";
 import { useTheme } from "../../theme";
@@ -34,23 +36,22 @@ export function ClientsScreen({ navigation }) {
 
   return (
     <Screen>
-      <Header title="Database" subtitle={subtitle} right={null} />
-      <View style={styles.search}>
-        <TextField label="Search" value={query} onChangeText={setQuery} placeholder="Name or email" />
-      </View>
-      <ScrollView style={styles.list} contentContainerStyle={{ paddingBottom: theme.spacing.xl }}>
-        {clients.map((c) => (
-          <ListRow
-            key={c.id}
-            title={c.name}
-            subtitle={c.email}
-            onPress={() => {
-              actions.selectClient(c.id);
-              navigation.navigate("ClientDetail", { clientId: c.id });
-            }}
-          />
-        ))}
-      </ScrollView>
+      <PageHeader title="Customers" action={null} />
+      <AdminCard>
+        <View style={styles.search}>
+          <TextField label="Search" value={query} onChangeText={setQuery} placeholder="Name or email" />
+        </View>
+        <AdminTable>
+          <tbody>
+            {clients.map((c) => (
+              <tr key={c.id} onClick={() => { actions.selectClient(c.id); navigation.navigate("ClientDetail", { clientId: c.id }); }} style={{ cursor: "pointer" }}>
+                <td style={{ padding: 12, fontWeight: 500 }}>{c.name}</td>
+                <td style={{ padding: 12 }}>{c.email}</td>
+              </tr>
+            ))}
+          </tbody>
+        </AdminTable>
+      </AdminCard>
     </Screen>
   );
 }

@@ -72,41 +72,51 @@ export function PublicFeedScreen({ navigation }) {
 
   return (
     <Screen>
-      <SmartHeader
-        title={PRODUCT_NAME}
-        subtitle={t(BUSINESSCAFE_DESCRIPTION_KEY)}
-        right={
-          cfg.PUBLIC_FEED_ENABLED ? (
-            <View style={styles.headerRightRow}>
-              <Pressable
-                onPress={() => navigation.navigate("MapSearch")}
-                style={({ pressed }) => [styles.iconWrap, pressed ? { opacity: 0.85 } : null]}
-              >
-                <Ionicons name="map-outline" size={18} color={theme.colors.primary} />
-              </Pressable>
-              <Pressable
-                onPress={() => navigation.navigate("FindAPro")}
-                style={({ pressed }) => [styles.iconWrap, pressed ? { opacity: 0.85 } : null]}
-              >
-                <Ionicons name="search-outline" size={18} color={theme.colors.primary} />
-              </Pressable>
-              {user && canCreate ? (
-                <Pressable
-                  onPress={() => navigation.navigate("PostEditor", { mode: "create" })}
-                  style={({ pressed }) => [styles.iconWrap, pressed ? { opacity: 0.85 } : null]}
-                >
-                  <Ionicons name="add" size={18} color={theme.colors.primary} />
-                </Pressable>
-              ) : null}
-            </View>
-          ) : null
-        }
-        scrollY={scrollY}
-        maxY={HEADER_MAX_Y}
-      />
-
-      <Animated.ScrollView
-        contentContainerStyle={styles.content}
+      return (
+        <Screen>
+          <SmartHeader
+            title={PRODUCT_NAME}
+            subtitle={t(BUSINESSCAFE_DESCRIPTION_KEY)}
+            right={
+              cfg.PUBLIC_FEED_ENABLED ? (
+                <View style={styles.headerRightRow}>
+                  <Pressable
+                    onPress={() => navigation.navigate("MapSearch")}
+                    style={({ pressed }) => [styles.iconWrap, pressed ? { opacity: 0.85 } : null]}
+                  >
+                    <Ionicons name="map-outline" size={18} color={theme.colors.primary} />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => navigation.navigate("FindAPro")}
+                    style={({ pressed }) => [styles.iconWrap, pressed ? { opacity: 0.85 } : null]}
+                  >
+                    <Ionicons name="search-outline" size={18} color={theme.colors.primary} />
+                  </Pressable>
+                  {user && canCreate ? (
+                    <Pressable
+                      onPress={() => navigation.navigate("PostEditor", { mode: "create" })}
+                      style={({ pressed }) => [styles.iconWrap, pressed ? { opacity: 0.85 } : null]}
+                    >
+                      <Ionicons name="add" size={18} color={theme.colors.primary} />
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null
+            }
+            scrollY={scrollY}
+            minY={0}
+            maxY={HEADER_MAX_Y}
+          />
+          <Animated.ScrollView
+            scrollEventThrottle={16}
+            onScroll={Animated.event([
+              { nativeEvent: { contentOffset: { y: scrollY } } }
+            ], { useNativeDriver: true })}
+          >
+            {/* ...resto del contenuto... */}
+          </Animated.ScrollView>
+        </Screen>
+      );
         scrollEventThrottle={16}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
