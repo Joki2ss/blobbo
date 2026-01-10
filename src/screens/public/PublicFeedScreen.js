@@ -239,7 +239,7 @@ export function PublicFeedScreen({ navigation }) {
           <View style={{ height: theme.spacing.xl }} />
         )}
       </Animated.ScrollView>
-    </Screen>
+  </Screen>
   );
 }
 
