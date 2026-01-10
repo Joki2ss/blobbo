@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, useWindowDimensions, Animated } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, useWindowDimensions } from "react-native";
+import { Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Screen } from "../../components/Screen";
@@ -17,6 +18,7 @@ import { ensureSeedPosts, searchFeedPosts } from "../../feed";
 import { cloudSearchPublicFeedPosts } from "../../services/cloudFeedService";
 import { BUSINESSCAFE_DESCRIPTION_KEY, PRODUCT_NAME, selectBusinessCafePlaceholderImageKey } from "../../hub/BusinessCafeBranding";
 import { t } from "../../i18n/strings";
+import { ListRow } from "../../components/ListRow";
 
 export function PublicFeedScreen({ navigation }) {
   const { session, backendMode, developerUnlocked } = useAppState();
@@ -24,6 +26,7 @@ export function PublicFeedScreen({ navigation }) {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const dims = useWindowDimensions();
+  const isDesktop = dims.width >= 1024;
 
   const user = session?.user || null;
   const cfg = useMemo(() => getSupportRuntimeConfig({ backendMode }), [backendMode]);
@@ -154,58 +157,70 @@ export function PublicFeedScreen({ navigation }) {
                 <Text style={styles.emptyText}>No posts found.</Text>
               </View>
             ) : (
-              posts.map((p) => (
-                <Card key={p.postId} style={styles.card}>
-                  <View style={styles.rowTop}>
-                    <View style={{ flex: 1 }}>
-                      {String(p.authorRole || "").toUpperCase() === "DEVELOPER" ? (
-                        <Text style={styles.platformLabel}>Platform update</Text>
+              isDesktop ? (
+                posts.map((p) => (
+                  <ListRow
+                    key={p.postId}
+                    title={p.title}
+                    subtitle={p.ownerBusinessName + (p.ownerCategory ? ` • ${p.ownerCategory}` : "")}
+                    onPress={() => navigation.navigate("PostEditor", { mode: "edit", postId: p.postId })}
+                    right={<Text style={{ color: '#64748B', fontSize: 12 }}>{p.status || ''}</Text>}
+                  />
+                ))
+              ) : (
+                posts.map((p) => (
+                  <Card key={p.postId} style={styles.card}>
+                    <View style={styles.rowTop}>
+                      <View style={{ flex: 1 }}>
+                        {String(p.authorRole || "").toUpperCase() === "DEVELOPER" ? (
+                          <Text style={styles.platformLabel}>Platform update</Text>
+                        ) : null}
+                        <Text style={styles.title}>{p.title}</Text>
+                        <Text style={styles.meta}>
+                          {String(p.authorRole || "").toUpperCase() === "DEVELOPER" ? "Platform" : p.ownerBusinessName} • {p.ownerCategory}
+                          {p.location ? ` • ${p.location.city || p.location.region}` : ""}
+                        </Text>
+                      </View>
+                      {user && (isDev || p.ownerUserId === user.id) ? (
+                        <Pressable
+                          onPress={() => navigation.navigate("PostEditor", { mode: "edit", postId: p.postId })}
+                          style={({ pressed }) => [styles.iconWrap, pressed ? { opacity: 0.85 } : null]}
+                        >
+                          <Ionicons name="create-outline" size={18} color={theme.colors.primary} />
+                        </Pressable>
                       ) : null}
-                      <Text style={styles.title}>{p.title}</Text>
-                      <Text style={styles.meta}>
-                        {String(p.authorRole || "").toUpperCase() === "DEVELOPER" ? "Platform" : p.ownerBusinessName} • {p.ownerCategory}
-                        {p.location ? ` • ${p.location.city || p.location.region}` : ""}
-                      </Text>
                     </View>
-                    {user && (isDev || p.ownerUserId === user.id) ? (
-                      <Pressable
-                        onPress={() => navigation.navigate("PostEditor", { mode: "edit", postId: p.postId })}
-                        style={({ pressed }) => [styles.iconWrap, pressed ? { opacity: 0.85 } : null]}
-                      >
-                        <Ionicons name="create-outline" size={18} color={theme.colors.primary} />
-                      </Pressable>
+
+                    {Array.isArray(p.images) && p.images.length > 0 ? (
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imgRow}>
+                        {p.images.slice(0, 3).map((img, idx) => (
+                          <Image key={idx} source={{ uri: img.uri }} style={styles.img} />
+                        ))}
+                      </ScrollView>
                     ) : null}
-                  </View>
 
-                  {Array.isArray(p.images) && p.images.length > 0 ? (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.imgRow}>
-                      {p.images.slice(0, 3).map((img, idx) => (
-                        <Image key={idx} source={{ uri: img.uri }} style={styles.img} />
-                      ))}
-                    </ScrollView>
-                  ) : null}
+                    <Text style={styles.desc} numberOfLines={6}>
+                      {stripHtml(p.description)}
+                    </Text>
 
-                  <Text style={styles.desc} numberOfLines={6}>
-                    {stripHtml(p.description)}
-                  </Text>
+                    {Array.isArray(p.moderationTags) && p.moderationTags.length > 0 ? (
+                      <View style={styles.moderationRow}>
+                        <Text style={styles.moderationText}>{p.moderationTags.join(" ")}</Text>
+                      </View>
+                    ) : null}
 
-                  {Array.isArray(p.moderationTags) && p.moderationTags.length > 0 ? (
-                    <View style={styles.moderationRow}>
-                      <Text style={styles.moderationText}>{p.moderationTags.join(" ")}</Text>
-                    </View>
-                  ) : null}
-
-                  {Array.isArray(p.keywords) && p.keywords.length > 0 ? (
-                    <View style={styles.chips}>
-                      {p.keywords.slice(0, 8).map((k) => (
-                        <View key={k} style={styles.chip}>
-                          <Text style={styles.chipText}>#{k}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  ) : null}
-                </Card>
-              ))
+                    {Array.isArray(p.keywords) && p.keywords.length > 0 ? (
+                      <View style={styles.chips}>
+                        {p.keywords.slice(0, 8).map((k) => (
+                          <View key={k} style={styles.chip}>
+                            <Text style={styles.chipText}>#{k}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    ) : null}
+                  </Card>
+                ))
+              )
             )}
           </>
         )}
@@ -213,7 +228,7 @@ export function PublicFeedScreen({ navigation }) {
         {user ? null : (
           <View style={{ height: theme.spacing.xl }} />
         )}
-      </ScrollView>
+      </Animated.ScrollView>
     </Screen>
   );
 }
