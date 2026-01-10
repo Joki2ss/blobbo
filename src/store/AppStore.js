@@ -2,8 +2,6 @@ import React, { createContext, useContext, useEffect, useMemo, useReducer } from
 import { Alert } from "react-native";
 
 import { getJson, setJson, remove } from "../services/storage";
-import { logEvent } from "../services/logger";
-import { getSupportRuntimeConfig } from "../config/supportFlags";
 import { isDeveloperUser } from "../support/SupportPermissions";
 
 const SESSION_KEY = "sxr_session_v1";
@@ -68,7 +66,7 @@ export function AppProviders({ children }) {
           developerUnlocked: false,
         },
       });
-      logEvent("app_hydrate", { hasSession: !!session, backendMode: prefs?.backendMode || "MOCK" });
+      // logEvent stubbed for Snack compatibility
     })();
     return () => {
       mounted = false;
@@ -100,8 +98,14 @@ export function AppProviders({ children }) {
       dispatch({ type: "SET_THEME_MODE", mode });
     },
     // Stubs for Expo Snack: no backend
-    async login() {
-      Alert.alert("Not available in demo");
+    async login({ email, password }) {
+      // Stubbed for Snack
+      const user = { id: "demo", email, role: "USER" };
+      const session = { user };
+      await setJson(SESSION_KEY, session);
+      dispatch({ type: "SET_SESSION", session });
+      dispatch({ type: "SET_DEVELOPER_UNLOCKED", value: false });
+      return session;
     },
     async register() {
       Alert.alert("Not available in demo");
