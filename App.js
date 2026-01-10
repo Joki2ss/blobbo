@@ -1,3 +1,3 @@
-import App from "./LAB/App";
+import App from "./src/App";
 
 export default App;
