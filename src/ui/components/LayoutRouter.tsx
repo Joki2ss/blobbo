@@ -3,6 +3,7 @@
 import React from "react";
 // All imports removed for Expo Snack compatibility
 
-  // Stub: always show a placeholder or main screen for Snack
+// Stub: always show a placeholder or main screen for Snack
+export default function LayoutRouter() {
   return <></>;
 }
