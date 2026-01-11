@@ -17,6 +17,8 @@ export function ChatScreen({ navigation }) {
 
   const [threads, setThreads] = useState([]);
   const [clientsById, setClientsById] = useState({});
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selected, setSelected] = useState([]);
 
   const subtitle = useMemo(() => (workspace ? `${workspace.name}` : ""), [workspace]);
 
@@ -41,18 +43,52 @@ export function ChatScreen({ navigation }) {
     actions.safeCall(refresh, { title: "Load failed" });
   }, [workspace?.id]);
 
+  // Bulk actions
+  const allSelected = selected.length === threads.length && threads.length > 0;
+  const toggleSelect = (id) => {
+    setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  };
+  const selectAll = () => setSelected(threads.map((t) => t.clientId));
+  const clearSelection = () => setSelected([]);
+  const exitSelection = () => { setSelectionMode(false); clearSelection(); };
+
+  const handleDelete = async () => {
+    for (const id of selected) {
+      await markThreadDeleted({ userId: session.user.id, clientId: id });
+    }
+    clearSelection();
+    setSelectionMode(false);
+    refresh();
+  };
+  const handleExport = () => {
+    // Fallback: JSON export
+    const exported = threads.filter((t) => selected.includes(t.clientId));
+    const json = JSON.stringify(exported, null, 2);
+    // In Snack: show as alert, in native: use share sheet
+    if (typeof window !== "undefined") alert(json);
+  };
+
   return (
     <Screen>
       <Header
-        title="Chat"
+        title={selectionMode ? `${selected.length} selected` : "Chat"}
         subtitle={subtitle}
         right={
-          <Pressable
-            onPress={() => navigation.navigate("NewMessage")}
-            style={({ pressed }) => [styles.newBtn, pressed ? { opacity: 0.85 } : null]}
-          >
-            <Ionicons name="create-outline" size={18} color={theme.colors.primary} />
-          </Pressable>
+          selectionMode ? (
+            <View style={{ flexDirection: "row" }}>
+              <Pressable onPress={selectAll} style={styles.newBtn}><Ionicons name="checkbox-outline" size={18} color={theme.colors.primary} /></Pressable>
+              <Pressable onPress={handleExport} style={styles.newBtn}><Ionicons name="download-outline" size={18} color={theme.colors.primary} /></Pressable>
+              <Pressable onPress={handleDelete} style={styles.newBtn}><Ionicons name="trash-outline" size={18} color={theme.colors.danger} /></Pressable>
+              <Pressable onPress={exitSelection} style={styles.newBtn}><Ionicons name="close-outline" size={18} color={theme.colors.mutedText} /></Pressable>
+            </View>
+          ) : (
+            <Pressable
+              onPress={() => navigation.navigate("NewMessage")}
+              style={({ pressed }) => [styles.newBtn, pressed ? { opacity: 0.85 } : null]}
+            >
+              <Ionicons name="create-outline" size={18} color={theme.colors.primary} />
+            </Pressable>
+          )
         }
       />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: theme.spacing.xl }}>
@@ -70,11 +106,16 @@ export function ChatScreen({ navigation }) {
                 title={title}
                 subtitle={t.lastText}
                 unreadCount={t.unreadCount}
-                onPress={async () => {
-                  actions.selectClient(t.clientId);
-                  await actions.backend.chat.markThreadRead({ workspaceId: workspace.id, clientId: t.clientId });
-                  navigation.navigate("ChatThread", { clientId: t.clientId });
-                }}
+                selected={selectionMode && selected.includes(t.clientId)}
+                onPress={selectionMode
+                  ? () => toggleSelect(t.clientId)
+                  : async () => {
+                      actions.selectClient(t.clientId);
+                      await actions.backend.chat.markThreadRead({ workspaceId: workspace.id, clientId: t.clientId });
+                      navigation.navigate("ChatThread", { clientId: t.clientId });
+                    }
+                }
+                onLongPress={() => { setSelectionMode(true); toggleSelect(t.clientId); }}
               />
             );
           })
