@@ -64,14 +64,16 @@ export function DashboardScreen({ navigation }) {
             </View>
 
             <View style={styles.kpiRow}>
-              <KpiCard
-                label="Unread messages"
-                value={kpis.unreadMessages}
-                icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />} />
-              <View style={{ width: theme.spacing.md }} />
-              <AdminCard>
-                <Button title="Ask support" onPress={() => navigation.navigate("Support")} />
-              </AdminCard>
+              <>
+                <KpiCard
+                  label="Unread messages"
+                  value={kpis.unreadMessages}
+                  icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />} />
+                <View style={{ width: theme.spacing.md }} />
+                <AdminCard>
+                  <Button title="Ask support" onPress={() => navigation.navigate("Support")} />
+                </AdminCard>
+              </>
             </View>
 
             <AdminCard>
