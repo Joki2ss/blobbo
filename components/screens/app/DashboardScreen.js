@@ -121,4 +121,3 @@ function makeStyles(theme) {
     },
   });
 }
-        <Screen>
