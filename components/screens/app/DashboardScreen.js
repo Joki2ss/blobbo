@@ -1,11 +1,10 @@
+
 import React, { useEffect, useMemo, useState } from "react";
 import { View, StyleSheet, ScrollView, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
 import { Screen } from "../../components/Screen";
 import PageHeader from "../../ui/admin/PageHeader";
 import AdminCard from "../../ui/admin/AdminCard";
-import AdminTable from "../../ui/admin/AdminTable";
 import { KpiCard } from "../../components/KpiCard";
 import { Button } from "../../components/Button";
 import { useTheme } from "../../theme";
@@ -18,7 +17,6 @@ export function DashboardScreen({ navigation }) {
   const actions = useAppActions();
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
-
   const [kpis, setKpis] = useState({ activeClients: 0, pendingDocs: 0, unreadMessages: 0 });
 
   const subtitle = useMemo(() => {
@@ -38,69 +36,64 @@ export function DashboardScreen({ navigation }) {
       if (!workspace) return;
       const clients = await actions.safeCall(() => actions.backend.clients.list({ workspaceId: workspace.id }), { title: "Load failed" });
       const threads = await actions.safeCall(() => actions.backend.chat.listThreads({ workspaceId: workspace.id }), { title: "Load failed" });
+      if (!mounted) return;
+      setKpis({
+        activeClients: clients?.length || 0,
+        pendingDocs: 0, // TODO: implement logic for pending docs
+        unreadMessages: threads?.reduce((acc, t) => acc + (t.unreadCount || 0), 0) || 0,
+      });
+    })();
+    return () => { mounted = false; };
+  }, [workspace, actions]);
 
-      // pending docs: count requests with pending/partial
-      return (
-        <Screen>
-          <PageHeader title="Dashboard" action={<Button title="Add client" onPress={() => navigation.navigate("NewClient")} />} />
-          <ScrollView contentContainerStyle={styles.content}>
-            {metaLine ? (
-              <AdminCard>
-                <View style={styles.metaRow}>
-                  <Text style={styles.metaText}>{metaLine}</Text>
-                </View>
-              </AdminCard>
-            ) : null}
-            <View style={styles.kpiRow}>
-              <KpiCard
-                label="Active clients"
-                value={kpis.activeClients}
-                icon={<Ionicons name="people-outline" size={20} color={theme.colors.primary} />} />
-              <View style={{ width: theme.spacing.md }} />
-              <KpiCard
-                label="Pending docs"
-                value={kpis.pendingDocs}
-                icon={<Ionicons name="document-text-outline" size={20} color={theme.colors.warning} />} />
+  return (
+    <Screen>
+      <PageHeader title="Dashboard" action={<Button title="Add client" onPress={() => navigation.navigate("NewClient")} />} />
+      <ScrollView contentContainerStyle={styles.content}>
+        {metaLine ? (
+          <AdminCard>
+            <View style={styles.metaRow}>
+              <Text style={styles.metaText}>{metaLine}</Text>
             </View>
-
-            <View style={styles.kpiRow}>
-              <>
-                <>
-                  <KpiCard
-                    label="Unread messages"
-                    value={kpis.unreadMessages}
-                    icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />} />
-                  <View style={{ width: theme.spacing.md }} />
-                  <AdminCard>
-                    <Button title="Ask support" onPress={() => navigation.navigate("Support")} />
-                  </AdminCard>
-                </>
-              </>
-            </View>
-
-            <AdminCard>
-              <View style={styles.actionsCol}>
-                <Button title="Add client" onPress={() => navigation.navigate("NewClient")} />
-                <View style={{ height: theme.spacing.md }} />
-                <Button
-                  title="New document request"
-                  variant="secondary"
-                  onPress={() => navigation.navigate("NewDocumentRequest")} />
-                <View style={{ height: theme.spacing.md }} />
-                <Button title="Open support" variant="secondary" onPress={() => navigation.navigate("Support")} />
-              </View>
-            </AdminCard>
-          </ScrollView>
-        </Screen>
-      );
+          </AdminCard>
+        ) : null}
+        <View style={styles.kpiRow}>
+          <KpiCard
+            label="Active clients"
+            value={kpis.activeClients}
+            icon={<Ionicons name="people-outline" size={20} color={theme.colors.primary} />} />
+          <View style={{ width: theme.spacing.md }} />
+          <KpiCard
+            label="Pending docs"
+            value={kpis.pendingDocs}
+            icon={<Ionicons name="document-text-outline" size={20} color={theme.colors.warning} />} />
+        </View>
+        <View style={styles.kpiRow}>
           <KpiCard
             label="Unread messages"
             value={kpis.unreadMessages}
-            icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />}
-                  </ScrollView>
-                </Screen>
+            icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />} />
+          <View style={{ width: theme.spacing.md }} />
+          <AdminCard>
+            <Button title="Ask support" onPress={() => navigation.navigate("Support")} />
+          </AdminCard>
+        </View>
+        <AdminCard>
+          <View style={styles.actionsCol}>
+            <Button title="Add client" onPress={() => navigation.navigate("NewClient")} />
+            <View style={{ height: theme.spacing.md }} />
+            <Button
+              title="New document request"
+              variant="secondary"
+              onPress={() => navigation.navigate("NewDocumentRequest")} />
+            <View style={{ height: theme.spacing.md }} />
+            <Button title="Open support" variant="secondary" onPress={() => navigation.navigate("Support")} />
+          </View>
+        </AdminCard>
+      </ScrollView>
+    </Screen>
+  );
 }
-
 
 function makeStyles(theme) {
   return StyleSheet.create({
@@ -108,66 +101,24 @@ function makeStyles(theme) {
       paddingHorizontal: theme.spacing.lg,
       paddingBottom: theme.spacing.xl,
     },
-    metaCard: {
-
-      useEffect(() => {
-        let mounted = true;
-        (async () => {
-          if (!workspace) return;
-          await actions.safeCall(() => actions.backend.clients.list({ workspaceId: workspace.id }), { title: "Load failed" });
-          await actions.safeCall(() => actions.backend.chat.listThreads({ workspaceId: workspace.id }), { title: "Load failed" });
-        })();
-        return () => { mounted = false; };
-      }, [workspace, actions]);
-
-      return (
+    metaRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: theme.spacing.md,
+    },
+    metaText: {
+      color: theme.colors.text,
+      fontSize: 14,
+    },
+    kpiRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: theme.spacing.md,
+    },
+    actionsCol: {
+      flexDirection: "column",
+      alignItems: "stretch",
+    },
+  });
+}
         <Screen>
-          <PageHeader title="Dashboard" action={<Button title="Add client" onPress={() => navigation.navigate("NewClient")} />} />
-          <ScrollView contentContainerStyle={styles.content}>
-            {metaLine ? (
-              <AdminCard>
-                <View style={styles.metaRow}>
-                  <Text style={styles.metaText}>{metaLine}</Text>
-                </View>
-              </AdminCard>
-            ) : null}
-            <View style={styles.kpiRow}>
-              <KpiCard
-                label="Active clients"
-                value={kpis.activeClients}
-                icon={<Ionicons name="people-outline" size={20} color={theme.colors.primary} />} />
-              <View style={{ width: theme.spacing.md }} />
-              <KpiCard
-                label="Pending docs"
-                value={kpis.pendingDocs}
-                icon={<Ionicons name="document-text-outline" size={20} color={theme.colors.warning} />} />
-            </View>
-
-            <View style={styles.kpiRow}>
-              <>
-                <KpiCard
-                  label="Unread messages"
-                  value={kpis.unreadMessages}
-                  icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />} />
-                <View style={{ width: theme.spacing.md }} />
-                <AdminCard>
-                  <Button title="Ask support" onPress={() => navigation.navigate("Support")} />
-                </AdminCard>
-              </>
-            </View>
-
-            <AdminCard>
-              <View style={styles.actionsCol}>
-                <Button title="Add client" onPress={() => navigation.navigate("NewClient")} />
-                <View style={{ height: theme.spacing.md }} />
-                <Button
-                  title="New document request"
-                  variant="secondary"
-                  onPress={() => navigation.navigate("NewDocumentRequest")} />
-                <View style={{ height: theme.spacing.md }} />
-                <Button title="Open support" variant="secondary" onPress={() => navigation.navigate("Support")} />
-              </View>
-            </AdminCard>
-          </ScrollView>
-        </Screen>
-      );
