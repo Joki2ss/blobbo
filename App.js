@@ -1,1 +1,1 @@
-export { default } from "./components/LAB/App";
+export { default } from "./components/App";
