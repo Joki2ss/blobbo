@@ -97,29 +97,8 @@ export function DashboardScreen({ navigation }) {
             label="Unread messages"
             value={kpis.unreadMessages}
             icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />}
-          />
-          <View style={{ width: theme.spacing.md }} />
-          <Card style={styles.cardMini}>
-            <Button title="Ask support" onPress={() => navigation.navigate("Support")} />
-          </Card>
-        </View>
-
-        <Card>
-          <View style={styles.actionsCol}>
-            <Button title="Add client" onPress={() => navigation.navigate("NewClient")} />
-            <View style={{ height: theme.spacing.md }} />
-            <Button
-              title="New document request"
-              variant="secondary"
-              onPress={() => navigation.navigate("NewDocumentRequest")}
-            />
-            <View style={{ height: theme.spacing.md }} />
-            <Button title="Open support" variant="secondary" onPress={() => navigation.navigate("Support")} />
-          </View>
-        </Card>
-      </ScrollView>
-    </Screen>
-  );
+                  </ScrollView>
+                </Screen>
 }
 
 
