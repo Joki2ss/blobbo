@@ -8,11 +8,11 @@ const SESSION_KEY = "sxr_session_v1";
 const PREFS_KEY = "sxr_prefs_v1";
 
 const initialState = {
-  hydrated: false,
-  session: null, // { user }
-  workspace: null, // { id, name }
+  hydrated: true,
+  session: { user: { id: "demo", email: "demo@demo.com", role: "ADMIN" } },
+  workspace: { id: "demo-ws", name: "Demo Workspace" },
   backendMode: "MOCK",
-  themeMode: "dark", // 'light' | 'dark' | 'system'
+  themeMode: "dark",
   selectedClientId: null,
   currentScreen: "",
   developerUnlocked: false,
