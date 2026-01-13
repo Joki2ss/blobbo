@@ -48,7 +48,6 @@ export function DashboardScreen({ navigation }) {
 
   return (
     <Screen>
-      <PageHeader title="Dashboard" action={<Button title="Add client" onPress={() => navigation.navigate("NewClient")} />} />
       <ScrollView contentContainerStyle={styles.content}>
         {metaLine ? (
           <AdminCard>
@@ -57,39 +56,35 @@ export function DashboardScreen({ navigation }) {
             </View>
           </AdminCard>
         ) : null}
-        <View style={styles.kpiRow}>
+        {/* KPI grid */}
+        <View style={styles.kpiGrid}>
           <KpiCard
             label="Active clients"
             value={kpis.activeClients}
-            icon={<Ionicons name="people-outline" size={20} color={theme.colors.primary} />} />
-          <View style={{ width: theme.spacing.md }} />
+            icon={<Ionicons name="people-outline" size={24} color={theme.colors.primary} />} />
           <KpiCard
             label="Pending docs"
             value={kpis.pendingDocs}
-            icon={<Ionicons name="document-text-outline" size={20} color={theme.colors.warning} />} />
+            icon={<Ionicons name="document-text-outline" size={24} color={theme.colors.warning} />} />
         </View>
-        <View style={styles.kpiRow}>
+        <View style={styles.kpiGrid}>
           <KpiCard
             label="Unread messages"
             value={kpis.unreadMessages}
-            icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />} />
-          <View style={{ width: theme.spacing.md }} />
-          <AdminCard>
-            <Button title="Ask support" onPress={() => navigation.navigate("Support")} />
-          </AdminCard>
+            icon={<Ionicons name="chatbubbles-outline" size={24} color={theme.colors.danger} />} />
+          <KpiCard
+            label="Support"
+            value={"?"}
+            icon={<Ionicons name="help-circle-outline" size={24} color={theme.colors.primary} />} />
         </View>
-        <AdminCard>
-          <View style={styles.actionsCol}>
-            <Button title="Add client" onPress={() => navigation.navigate("NewClient")} />
-            <View style={{ height: theme.spacing.md }} />
-            <Button
-              title="New document request"
-              variant="secondary"
-              onPress={() => navigation.navigate("NewDocumentRequest")} />
-            <View style={{ height: theme.spacing.md }} />
-            <Button title="Open support" variant="secondary" onPress={() => navigation.navigate("Support")} />
-          </View>
-        </AdminCard>
+        {/* Azioni rapide */}
+        <View style={styles.actionsRow}>
+          <Button title="Add client" onPress={() => navigation.navigate("NewClient")} />
+          <View style={{ width: theme.spacing.md }} />
+          <Button title="New document request" variant="secondary" onPress={() => navigation.navigate("NewDocumentRequest")} />
+          <View style={{ width: theme.spacing.md }} />
+          <Button title="Open support" variant="secondary" onPress={() => navigation.navigate("Support")} />
+        </View>
       </ScrollView>
     </Screen>
   );
@@ -110,14 +105,20 @@ function makeStyles(theme) {
       color: theme.colors.text,
       fontSize: 14,
     },
-    kpiRow: {
+    kpiGrid: {
+      flexDirection: "row",
+      alignItems: "stretch",
+      justifyContent: "space-between",
+      marginBottom: theme.spacing.md,
+      gap: theme.spacing.md,
+    },
+    actionsRow: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: theme.spacing.md,
-    },
-    actionsCol: {
-      flexDirection: "column",
-      alignItems: "stretch",
+      justifyContent: "center",
+      marginTop: theme.spacing.lg,
+      marginBottom: theme.spacing.xl,
+      gap: theme.spacing.md,
     },
   });
 }
