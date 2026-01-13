@@ -9,20 +9,7 @@ import PublicFeedScreen from "../../screens/public/PublicFeedScreen";
 import DashboardScreen from "../../screens/app/DashboardScreen";
 
 export default function LayoutRouter() {
-  const { session } = useAppState();
-  if (!session)
-    return (
-      <GuestShell>
-        <PublicFeedScreen />
-      </GuestShell>
-    );
-  if (session.user.role === "CUSTOMER")
-    return (
-      <CustomerShell>
-        <DashboardScreen />
-      </CustomerShell>
-    );
-  // PRO/ADMIN/STAFF/DEV
+  // BYPASS: mostra sempre la dashboard in ProShell, ignora sessione
   return (
     <ProShell>
       <DashboardScreen />
