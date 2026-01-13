@@ -1,124 +1,73 @@
 
-import React, { useEffect, useMemo, useState } from "react";
-import { View, StyleSheet, ScrollView, Text } from "react-native";
+import React from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Screen } from "../../components/Screen";
-import PageHeader from "../../ui/admin/PageHeader";
-import AdminCard from "../../ui/admin/AdminCard";
-import { KpiCard } from "../../components/KpiCard";
-import { Button } from "../../components/Button";
-import { useTheme } from "../../theme";
-import { useAppActions, useAppState } from "../../store/AppStore";
-import { formatGreeting } from "../../utils/greeting";
-import { t } from "../../i18n/strings";
 
-export function DashboardScreen({ navigation }) {
-  const { session, workspace, backendMode } = useAppState();
-  const actions = useAppActions();
-  const theme = useTheme();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
-  const [kpis, setKpis] = useState({ activeClients: 0, pendingDocs: 0, unreadMessages: 0 });
-
-  const subtitle = useMemo(() => {
-    if (!session?.user) return "";
-    const greeting = formatGreeting({ user: session.user });
-    return greeting || t("dashboard.subtitle");
-  }, [session, workspace, backendMode]);
-
-  const metaLine = useMemo(() => {
-    if (!session?.user || !workspace) return "";
-    return `${workspace.name} • ${session.user.role} • ${backendMode}`;
-  }, [session?.user?.id, workspace?.id, backendMode]);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      if (!workspace) return;
-      const clients = await actions.safeCall(() => actions.backend.clients.list({ workspaceId: workspace.id }), { title: "Load failed" });
-      const threads = await actions.safeCall(() => actions.backend.chat.listThreads({ workspaceId: workspace.id }), { title: "Load failed" });
-      if (!mounted) return;
-      setKpis({
-        activeClients: clients?.length || 0,
-        pendingDocs: 0, // TODO: implement logic for pending docs
-        unreadMessages: threads?.reduce((acc, t) => acc + (t.unreadCount || 0), 0) || 0,
-      });
-    })();
-    return () => { mounted = false; };
-  }, [workspace, actions]);
-
+export function DashboardScreen() {
+  // MOCK DATA
+  const kpis = [
+    { label: "Active clients", value: 12, icon: "people-outline", color: "#2563EB" },
+    { label: "Pending docs", value: 3, icon: "document-text-outline", color: "#D97706" },
+    { label: "Unread messages", value: 7, icon: "chatbubbles-outline", color: "#DC2626" },
+    { label: "Support", value: "?", icon: "help-circle-outline", color: "#2563EB" },
+  ];
   return (
-    <Screen>
-      <ScrollView contentContainerStyle={styles.content}>
-        {metaLine ? (
-          <AdminCard>
-            <View style={styles.metaRow}>
-              <Text style={styles.metaText}>{metaLine}</Text>
-            </View>
-          </AdminCard>
-        ) : null}
-        {/* KPI grid */}
-        <View style={styles.kpiGrid}>
-          <KpiCard
-            label="Active clients"
-            value={kpis.activeClients}
-            icon={<Ionicons name="people-outline" size={24} color={theme.colors.primary} />} />
-          <KpiCard
-            label="Pending docs"
-            value={kpis.pendingDocs}
-            icon={<Ionicons name="document-text-outline" size={24} color={theme.colors.warning} />} />
+    <View style={styles.container}>
+      {/* TopBar mock */}
+      <View style={styles.topBar}>
+        <Text style={styles.topBarTitle}>Dashboard</Text>
+        <TouchableOpacity><Ionicons name="notifications-outline" size={24} color="#fff" /></TouchableOpacity>
+        <View style={styles.avatar}><Text style={{ color: "#fff" }}>U</Text></View>
+      </View>
+      {/* Sidebar mock */}
+      <View style={styles.row}>
+        <View style={styles.sidebar}>
+          {kpis.map((kpi, i) => (
+            <TouchableOpacity key={kpi.label} style={styles.sidebarItem}>
+              <Ionicons name={kpi.icon} size={24} color={kpi.color} />
+              <Text style={styles.sidebarLabel}>{kpi.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
-        <View style={styles.kpiGrid}>
-          <KpiCard
-            label="Unread messages"
-            value={kpis.unreadMessages}
-            icon={<Ionicons name="chatbubbles-outline" size={24} color={theme.colors.danger} />} />
-          <KpiCard
-            label="Support"
-            value={"?"}
-            icon={<Ionicons name="help-circle-outline" size={24} color={theme.colors.primary} />} />
-        </View>
-        {/* Azioni rapide */}
-        <View style={styles.actionsRow}>
-          <Button title="Add client" onPress={() => navigation.navigate("NewClient")} />
-          <View style={{ width: theme.spacing.md }} />
-          <Button title="New document request" variant="secondary" onPress={() => navigation.navigate("NewDocumentRequest")} />
-          <View style={{ width: theme.spacing.md }} />
-          <Button title="Open support" variant="secondary" onPress={() => navigation.navigate("Support")} />
-        </View>
-      </ScrollView>
-    </Screen>
+        {/* Main dashboard */}
+        <ScrollView contentContainerStyle={styles.content}>
+          <Text style={styles.meta}>Demo Workspace • ADMIN • MOCK</Text>
+          <View style={styles.kpiGrid}>
+            {kpis.map((kpi) => (
+              <View key={kpi.label} style={styles.kpiCard}>
+                <Ionicons name={kpi.icon} size={32} color={kpi.color} />
+                <Text style={styles.kpiLabel}>{kpi.label}</Text>
+                <Text style={styles.kpiValue}>{kpi.value}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>Add client</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>New document</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>Open support</Text></TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
+    </View>
   );
 }
 
-function makeStyles(theme) {
-  return StyleSheet.create({
-    content: {
-      paddingHorizontal: theme.spacing.lg,
-      paddingBottom: theme.spacing.xl,
-    },
-    metaRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: theme.spacing.md,
-    },
-    metaText: {
-      color: theme.colors.text,
-      fontSize: 14,
-    },
-    kpiGrid: {
-      flexDirection: "row",
-      alignItems: "stretch",
-      justifyContent: "space-between",
-      marginBottom: theme.spacing.md,
-      gap: theme.spacing.md,
-    },
-    actionsRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: theme.spacing.lg,
-      marginBottom: theme.spacing.xl,
-      gap: theme.spacing.md,
-    },
-  });
-}
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#F6F7FB" },
+  topBar: { height: 64, flexDirection: "row", alignItems: "center", backgroundColor: "#181C1F", paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: "#23272A" },
+  topBarTitle: { flex: 1, color: "#fff", fontWeight: "bold", fontSize: 22 },
+  avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: "#444", alignItems: "center", justifyContent: "center", marginLeft: 16 },
+  row: { flex: 1, flexDirection: "row" },
+  sidebar: { width: 110, backgroundColor: "#23272A", paddingVertical: 24, alignItems: "center" },
+  sidebarItem: { alignItems: "center", marginBottom: 32 },
+  sidebarLabel: { color: "#fff", fontSize: 12, marginTop: 4 },
+  content: { flexGrow: 1, padding: 24 },
+  meta: { color: "#64748B", fontSize: 14, marginBottom: 16 },
+  kpiGrid: { flexDirection: "row", flexWrap: "wrap", gap: 16, marginBottom: 24 },
+  kpiCard: { backgroundColor: "#fff", borderRadius: 12, padding: 16, alignItems: "center", width: 140, margin: 8, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 6, elevation: 2 },
+  kpiLabel: { color: "#64748B", fontSize: 13, marginTop: 8 },
+  kpiValue: { color: "#2563EB", fontWeight: "bold", fontSize: 20, marginTop: 4 },
+  actionsRow: { flexDirection: "row", justifyContent: "center", gap: 16, marginTop: 24 },
+  actionBtn: { backgroundColor: "#2563EB", borderRadius: 24, paddingHorizontal: 20, paddingVertical: 12, marginHorizontal: 8 },
+  actionText: { color: "#fff", fontWeight: "bold" },
+});
