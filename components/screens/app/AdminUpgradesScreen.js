@@ -66,7 +66,16 @@ export function AdminUpgradesScreen({ navigation }) {
             { icon: "chatbubbles-outline", label: "Feed" },
             { icon: "help-circle-outline", label: "Support" },
           ].map((item) => (
-            <TouchableOpacity key={item.label} style={styles.sidebarItem}>
+            <TouchableOpacity key={item.label} style={styles.sidebarItem} onPress={() => {
+              switch (item.label) {
+                case "Home": navigation.navigate("HomeScreen"); break;
+                case "Clients": navigation.navigate("ClientsScreen"); break;
+                case "Docs": navigation.navigate("DocumentsListScreen"); break;
+                case "Feed": navigation.navigate("PublicFeedScreen"); break;
+                case "Support": navigation.navigate("SupportScreen"); break;
+                default: break;
+              }
+            }}>
               <Ionicons name={item.icon} size={22} color="#23272A" />
               <Text style={styles.sidebarLabel}>{item.label}</Text>
             </TouchableOpacity>
