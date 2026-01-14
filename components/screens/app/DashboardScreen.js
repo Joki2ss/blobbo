@@ -1,43 +1,33 @@
 
-import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-
 export function DashboardScreen() {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 900;
 
-  import React from "react";
-  import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from "react-native";
-  import { Ionicons } from "@expo/vector-icons";
+  // MOCK KPI (solo quelli già esistenti, NO analytics)
+  const kpis = [
+    { label: "Active clients", value: 12, icon: "people-outline", color: "#2563EB" },
+    { label: "Pending docs", value: 3, icon: "document-text-outline", color: "#D97706" },
+    { label: "Unread messages", value: 7, icon: "chatbubbles-outline", color: "#DC2626" },
+    { label: "Support", value: "?", icon: "help-circle-outline", color: "#2563EB" },
+  ];
 
-  export function DashboardScreen() {
-    const { width } = useWindowDimensions();
-    const isDesktop = width >= 900;
-
-    // MOCK KPI (solo quelli già esistenti, NO analytics)
-    const kpis = [
-      { label: "Active clients", value: 12, icon: "people-outline", color: "#2563EB" },
-      { label: "Pending docs", value: 3, icon: "document-text-outline", color: "#D97706" },
-      { label: "Unread messages", value: 7, icon: "chatbubbles-outline", color: "#DC2626" },
-      { label: "Support", value: "?", icon: "help-circle-outline", color: "#2563EB" },
-    ];
-
-    return (
-      <View style={styles.root}>
-        {/* TopBar Shopify-like */}
-        <View style={styles.topBar}>
-          <View style={styles.brandArea}>
-            <Ionicons name="storefront-outline" size={28} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.brandText}>SXR Managements</Text>
-          </View>
-          <View style={styles.searchBar}>
-            <Ionicons name="search-outline" size={20} color="#64748B" style={{ marginRight: 8 }} />
-            <Text style={styles.searchPlaceholder}>Search...</Text>
-          </View>
-          <View style={styles.topBarRight}>
-            <TouchableOpacity style={styles.topBarIcon}><Ionicons name="notifications-outline" size={22} color="#fff" /></TouchableOpacity>
-            <TouchableOpacity style={styles.topBarIcon}><Ionicons name="help-circle-outline" size={22} color="#fff" /></TouchableOpacity>
-            <View style={styles.avatar}><Text style={{ color: "#fff", fontWeight: "bold" }}>U</Text></View>
-          </View>
+  return (
+    <View style={styles.root}>
+      {/* TopBar Shopify-like */}
+      <View style={styles.topBar}>
+        <View style={styles.brandArea}>
+          <Ionicons name="storefront-outline" size={28} color="#fff" style={{ marginRight: 8 }} />
+          <Text style={styles.brandText}>SXR Managements</Text>
+        </View>
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={20} color="#64748B" style={{ marginRight: 8 }} />
+          <Text style={styles.searchPlaceholder}>Search...</Text>
+        </View>
+        <View style={styles.topBarRight}>
+          <TouchableOpacity style={styles.topBarIcon}><Ionicons name="notifications-outline" size={22} color="#fff" /></TouchableOpacity>
+          <TouchableOpacity style={styles.topBarIcon}><Ionicons name="help-circle-outline" size={22} color="#fff" /></TouchableOpacity>
+          <View style={styles.avatar}><Text style={{ color: "#fff", fontWeight: "bold" }}>U</Text></View>
+        </View>
         </View>
         <View style={styles.row}>
           {/* Sidebar Shopify-like */}
