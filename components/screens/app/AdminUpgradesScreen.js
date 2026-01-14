@@ -112,14 +112,18 @@ export function AdminUpgradesScreen({ navigation }) {
                   {items.map((it) => {
                     const statusText = it.availabilityStatus === "coming_soon" ? "Coming soon" : it.enabled ? "Enabled" : "Disabled";
                     return (
-                      <View key={it.featureId} style={styles.listRow}>
+                      <TouchableOpacity
+                        key={it.featureId}
+                        style={styles.listRow}
+                        onPress={() => navigation.navigate("AdminUpgradeDetail", { featureId: it.featureId })}
+                      >
                         <Ionicons name={it.icon || "sparkles-outline"} size={22} color={theme.colors.mutedText} style={{ marginRight: 12 }} />
                         <View style={{ flex: 1 }}>
                           <Text style={styles.listTitle}>{it.name}</Text>
                           <Text style={styles.listSubtitle}>{it.shortDescription}</Text>
                         </View>
                         <Text style={styles.badgeText}>{statusText}</Text>
-                      </View>
+                      </TouchableOpacity>
                     );
                   })}
                 </View>
