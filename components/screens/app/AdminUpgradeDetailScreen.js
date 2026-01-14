@@ -1,10 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 
-import { Screen } from "../../components/Screen";
-import { Header } from "../../components/Header";
-import { Card } from "../../components/Card";
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, Alert, ScrollView, TouchableOpacity, useWindowDimensions } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../../components/Button";
 import { useTheme } from "../../theme";
 import { useAppActions, useAppState } from "../../store/AppStore";
@@ -17,7 +14,9 @@ function isAdminRole(role) {
 
 export function AdminUpgradeDetailScreen({ route }) {
   const theme = useTheme();
-  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 900;
+  const styles = makeStyles(theme);
 
   const { session, backendMode } = useAppState();
   const actions = useAppActions();
@@ -36,107 +35,113 @@ export function AdminUpgradeDetailScreen({ route }) {
     })();
   }, [isAdmin, featureId, backendMode]);
 
-  if (!isAdmin) {
-    return (
-      <Screen>
-        <Header title="Feature" subtitle="Admin only" />
-        <View style={styles.content}>
-          <Card>
-            <Text style={styles.muted}>You are not authorized to view this page.</Text>
-          </Card>
-        </View>
-      </Screen>
-    );
-  }
-
-  if (!item) {
-    return (
-      <Screen>
-        <Header title="Feature" subtitle="Loading" />
-        <View style={styles.content}>
-          <Card>
-            <Text style={styles.muted}>Loading…</Text>
-          </Card>
-        </View>
-      </Screen>
-    );
-  }
-
-  const canBuy = item.availabilityStatus === "available" && item.enabled;
-  const ctaTitle = item.availabilityStatus === "coming_soon" ? "Coming soon" : item.enabled ? "Buy" : "Not enabled";
-
+  // --- Shopify-like layout ---
   return (
-    <Screen>
-      <Header title={item.name} subtitle={item.priceLabel} />
-      <View style={styles.content}>
-        <Card style={styles.card}>
-          <View style={styles.iconRow}>
-            <Ionicons name={item.icon || "sparkles-outline"} size={22} color={theme.colors.mutedText} />
-            <Text style={styles.status}>{item.availabilityStatus === "coming_soon" ? "Coming soon" : item.enabled ? "Enabled" : "Disabled"}</Text>
-          </View>
-          <Text style={styles.long}>{item.longDescription}</Text>
-
-          <View style={{ height: theme.spacing.md }} />
-          <Button
-            title={ctaTitle}
-            variant={canBuy ? "primary" : "secondary"}
-            onPress={() => {
-              if (!canBuy) return;
-              Alert.alert(
-                "Redirect",
-                "You will be redirected to Google Play Store to complete the purchase.",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Continue",
-                    onPress: async () => {
-                      await openPlayStoreListing();
-                    },
-                  },
-                ],
-                { cancelable: true }
-              );
-            }}
-          />
-          <Text style={styles.note}>Purchases do not unlock features client-side. Enablement is controlled by backend flags only.</Text>
-        </Card>
+    <View style={styles.root}>
+      {/* TopBar Shopify-like */}
+      <View style={styles.topBar}>
+        <View style={styles.brandArea}>
+          <Ionicons name="storefront-outline" size={28} color="#fff" style={{ marginRight: 8 }} />
+          <Text style={styles.brandText}>SXR Managements</Text>
+        </View>
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={20} color="#64748B" style={{ marginRight: 8 }} />
+          <Text style={styles.searchPlaceholder}>Search...</Text>
+        </View>
+        <View style={styles.topBarRight}>
+          <TouchableOpacity style={styles.topBarIcon}><Ionicons name="notifications-outline" size={22} color="#fff" /></TouchableOpacity>
+          <TouchableOpacity style={styles.topBarIcon}><Ionicons name="help-circle-outline" size={22} color="#fff" /></TouchableOpacity>
+          <View style={styles.avatar}><Text style={{ color: "#fff", fontWeight: "bold" }}>U</Text></View>
+        </View>
       </View>
-    </Screen>
+      <View style={styles.row}>
+        {/* Sidebar Shopify-like */}
+        <View style={styles.sidebar}>
+          {[
+            { icon: "home-outline", label: "Home" },
+            { icon: "people-outline", label: "Clients" },
+            { icon: "document-text-outline", label: "Docs" },
+            { icon: "chatbubbles-outline", label: "Feed" },
+            { icon: "help-circle-outline", label: "Support" },
+          ].map((item) => (
+            <TouchableOpacity key={item.label} style={styles.sidebarItem}>
+              <Ionicons name={item.icon} size={22} color="#23272A" />
+              <Text style={styles.sidebarLabel}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {/* Main Content */}
+        <ScrollView contentContainerStyle={[styles.content, isDesktop && styles.contentDesktop]}>
+          <View style={styles.panel}>
+            <Text style={styles.sectionHeader}>Feature Detail</Text>
+            {!isAdmin ? (
+              <Text style={styles.muted}>You are not authorized to view this page.</Text>
+            ) : !item ? (
+              <Text style={styles.muted}>Loading…</Text>
+            ) : (
+              <View>
+                <View style={styles.iconRow}>
+                  <Ionicons name={item.icon || "sparkles-outline"} size={32} color={theme.colors.mutedText} style={{ marginRight: 12 }} />
+                  <Text style={styles.status}>{item.availabilityStatus === "coming_soon" ? "Coming soon" : item.enabled ? "Enabled" : "Disabled"}</Text>
+                </View>
+                <Text style={styles.sectionTitle}>{item.name}</Text>
+                <Text style={styles.meta}>{item.priceLabel}</Text>
+                <Text style={styles.long}>{item.longDescription}</Text>
+                <View style={{ height: 24 }} />
+                <Button
+                  title={item.availabilityStatus === "coming_soon" ? "Coming soon" : item.enabled ? "Buy" : "Not enabled"}
+                  variant={item.availabilityStatus === "available" && item.enabled ? "primary" : "secondary"}
+                  onPress={() => {
+                    if (!(item.availabilityStatus === "available" && item.enabled)) return;
+                    Alert.alert(
+                      "Redirect",
+                      "You will be redirected to Google Play Store to complete the purchase.",
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Continue",
+                          onPress: async () => {
+                            await openPlayStoreListing();
+                          },
+                        },
+                      ],
+                      { cancelable: true }
+                    );
+                  }}
+                />
+                <Text style={styles.note}>Purchases do not unlock features client-side. Enablement is controlled by backend flags only.</Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </View>
+    </View>
   );
 }
 
-function makeStyles(theme) {
-  return StyleSheet.create({
-    content: {
-      padding: theme.spacing.lg,
-      flex: 1,
-    },
-    card: {
-      marginBottom: theme.spacing.md,
-    },
-    iconRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: theme.spacing.sm,
-    },
-    status: {
-      ...theme.typography.small,
-      color: theme.colors.mutedText,
-      fontWeight: "700",
-    },
-    long: {
-      ...theme.typography.body,
-      color: theme.colors.text,
-    },
-    muted: {
-      ...theme.typography.small,
-      color: theme.colors.mutedText,
-    },
-    note: {
-      ...theme.typography.small,
-      color: theme.colors.mutedText,
-      marginTop: theme.spacing.sm,
-    },
-  });
-}
+const makeStyles = (theme) => StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#F6F7FB" },
+  topBar: { height: 64, flexDirection: "row", alignItems: "center", backgroundColor: "#181C1F", paddingHorizontal: 24, borderBottomWidth: 1, borderBottomColor: "#23272A" },
+  brandArea: { flexDirection: "row", alignItems: "center", minWidth: 180 },
+  brandText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
+  searchBar: { flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: "#fff", borderRadius: 8, marginHorizontal: 32, paddingHorizontal: 16, height: 38 },
+  searchPlaceholder: { color: "#64748B", fontSize: 15 },
+  topBarRight: { flexDirection: "row", alignItems: "center" },
+  topBarIcon: { marginHorizontal: 8 },
+  avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: "#444", alignItems: "center", justifyContent: "center", marginLeft: 8 },
+  row: { flex: 1, flexDirection: "row" },
+  sidebar: { width: 120, backgroundColor: "#F3F4F6", paddingVertical: 24, alignItems: "center", borderRightWidth: 1, borderRightColor: "#E5E7EB" },
+  sidebarItem: { alignItems: "center", marginBottom: 28, width: "100%" },
+  sidebarLabel: { color: "#23272A", fontSize: 13, marginTop: 4, fontWeight: "500" },
+  content: { flexGrow: 1, padding: 32, alignItems: "center" },
+  contentDesktop: { maxWidth: 900, alignSelf: "center" },
+  panel: { backgroundColor: "#fff", borderRadius: 16, padding: 28, marginBottom: 28, width: "100%", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },
+  sectionHeader: { color: "#181C1F", fontWeight: "bold", fontSize: 17, marginBottom: 18, letterSpacing: 0.5 },
+  sectionTitle: { color: "#181C1F", fontWeight: "bold", fontSize: 16, marginBottom: 8 },
+  meta: { color: "#64748B", fontSize: 14, marginBottom: 8 },
+  iconRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
+  status: { color: "#64748B", fontWeight: "700", fontSize: 13, marginLeft: 8 },
+  long: { color: "#23272A", fontSize: 15, marginBottom: 12 },
+  muted: { color: "#64748B", fontSize: 14 },
+  note: { color: "#64748B", fontSize: 13, marginTop: 16 },
+});
