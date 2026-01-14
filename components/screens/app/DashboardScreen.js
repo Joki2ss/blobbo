@@ -1,7 +1,10 @@
 
+
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+
+// navigation prop sarà passato da React Navigation
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#F6F7FB" },
@@ -35,7 +38,7 @@ const styles = StyleSheet.create({
   rightPanelText: { color: "#64748B", fontSize: 15 },
 });
 
-export function DashboardScreen() {
+export function DashboardScreen({ navigation }) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 900;
 
@@ -46,6 +49,38 @@ export function DashboardScreen() {
     { label: "Unread messages", value: 7, icon: "chatbubbles-outline", color: "#DC2626" },
     { label: "Support", value: "?", icon: "help-circle-outline", color: "#2563EB" },
   ];
+
+  // Sidebar navigation handlers
+  const handleSidebarNav = (label) => {
+    switch (label) {
+      case "Home":
+        navigation.navigate("HomeScreen"); break;
+      case "Clients":
+        navigation.navigate("ClientsScreen"); break;
+      case "Docs":
+        navigation.navigate("DocumentsListScreen"); break;
+      case "Feed":
+        navigation.navigate("PublicFeedScreen"); break;
+      case "Support":
+        navigation.navigate("SupportScreen"); break;
+      default:
+        break;
+    }
+  };
+
+  // Quick actions navigation handlers
+  const handleAction = (action) => {
+    switch (action) {
+      case "Add client":
+        navigation.navigate("NewClientScreen"); break;
+      case "New document":
+        navigation.navigate("NewDocumentRequestScreen"); break;
+      case "Open support":
+        navigation.navigate("SupportScreen"); break;
+      default:
+        break;
+    }
+  };
 
   return (
     <View style={styles.root}>
@@ -75,7 +110,7 @@ export function DashboardScreen() {
             { icon: "chatbubbles-outline", label: "Feed" },
             { icon: "help-circle-outline", label: "Support" },
           ].map((item) => (
-            <TouchableOpacity key={item.label} style={styles.sidebarItem}>
+            <TouchableOpacity key={item.label} style={styles.sidebarItem} onPress={() => handleSidebarNav(item.label)}>
               <Ionicons name={item.icon} size={22} color="#23272A" />
               <Text style={styles.sidebarLabel}>{item.label}</Text>
             </TouchableOpacity>
@@ -102,9 +137,9 @@ export function DashboardScreen() {
           <View style={styles.panel}>
             <Text style={styles.sectionHeader}>Quick Actions</Text>
             <View style={styles.actionsRow}>
-              <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>Add client</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>New document</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>Open support</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => handleAction("Add client")}><Text style={styles.actionText}>Add client</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => handleAction("New document")}><Text style={styles.actionText}>New document</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => handleAction("Open support")}><Text style={styles.actionText}>Open support</Text></TouchableOpacity>
             </View>
           </View>
         </ScrollView>
