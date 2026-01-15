@@ -1,8 +1,10 @@
 
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, TextInput, FlatList, Keyboard, Platform, Modal, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AssistantPanel from "../../../src/ui/components/AssistantPanel";
+import * as assistantStorage from "../../../src/services/assistantStorage";
 
 // navigation prop sarà passato da React Navigation
 
@@ -19,6 +21,7 @@ const styles = StyleSheet.create({
   searchSuggestionText: { color: "#181C1F", fontSize: 15, marginLeft: 10 },
   searchSuggestionActive: { backgroundColor: "#F1F5F9" },
   topBarRight: { flexDirection: "row", alignItems: "center" },
+  assistantIcon: { marginLeft: 18, marginRight: 2, padding: 6, borderRadius: 8, backgroundColor: "#23272A" },
   topBarIcon: { marginHorizontal: 8 },
   avatar: { width: 32, height: 32, borderRadius: 16, backgroundColor: "#444", alignItems: "center", justifyContent: "center", marginLeft: 8 },
   row: { flex: 1, flexDirection: "row" },
@@ -50,7 +53,32 @@ const styles = StyleSheet.create({
 
 export function DashboardScreen({ navigation }) {
   const { width } = useWindowDimensions();
-  const isDesktop = width >= 900;
+  const isDesktop = width >= 1024;
+
+  // Assistant panel state
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantMessages, setAssistantMessages] = useState([]);
+  const userId = "guest"; // Replace with session.user.id if available
+
+  // Load chat history (MOCK: AsyncStorage)
+  useEffect(() => {
+    if (isDesktop && assistantOpen) {
+      assistantStorage.getConversation(userId).then(setAssistantMessages);
+    }
+  }, [assistantOpen, isDesktop]);
+
+  // Send message handler
+  const handleAssistantSend = async ({ text, attachments }) => {
+    const msg = { conversationId: userId, role: "user", text, attachments, createdAt: Date.now() };
+    setAssistantMessages(prev => [...prev, msg]);
+    await assistantStorage.saveMessage(userId, msg);
+    // MOCK: auto-reply after 1s
+    setTimeout(async () => {
+      const reply = { conversationId: userId, role: "assistant", text: "I'm here to help you use the platform! (MOCK)", attachments: [], createdAt: Date.now() };
+      setAssistantMessages(prev => [...prev, reply]);
+      await assistantStorage.saveMessage(userId, reply);
+    }, 1000);
+  };
 
   // Predictive search state
   const [search, setSearch] = useState("");
@@ -236,6 +264,11 @@ export function DashboardScreen({ navigation }) {
             </View>
           )}
         </View>
+        {isDesktop && (
+          <TouchableOpacity style={styles.assistantIcon} onPress={() => setAssistantOpen(v => !v)} accessibilityLabel="Open assistant">
+            <Ionicons name="chatbubbles-outline" size={22} color="#fff" />
+          </TouchableOpacity>
+        )}
         <View style={styles.topBarRight}>
           <TouchableOpacity style={styles.topBarIcon}><Ionicons name="notifications-outline" size={22} color="#fff" /></TouchableOpacity>
           <TouchableOpacity style={styles.topBarIcon}><Ionicons name="help-circle-outline" size={22} color="#fff" /></TouchableOpacity>
@@ -339,12 +372,15 @@ export function DashboardScreen({ navigation }) {
             </View>
           </View>
         </ScrollView>
-        {/* Optional right panel (Inbox/Assistant) */}
+        {/* AssistantPanel right drawer (desktop only) */}
         {isDesktop && (
-          <View style={styles.rightPanel}>
-            <Text style={styles.rightPanelHeader}>Assistant</Text>
-            <Text style={styles.rightPanelText}>How can I help?</Text>
-          </View>
+          <AssistantPanel
+            open={assistantOpen}
+            onClose={() => setAssistantOpen(false)}
+            messages={assistantMessages}
+            onSend={handleAssistantSend}
+            userId={userId}
+          />
         )}
       </View>
     </View>
