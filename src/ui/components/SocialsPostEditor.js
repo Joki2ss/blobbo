@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as socialsStorage from "../../services/socialsStorage";
+import { getCurrentUser } from "../../services/userProfile";
+import { canAccess, requiredPlan } from "../../services/planAccess";
+import PaywallModal from "./PaywallModal";
 
 const TARGETS = [
   { key: "facebook", icon: "logo-facebook" },
@@ -23,12 +26,18 @@ export default function SocialsPostEditor({ route, navigation }) {
   const [hashtags, setHashtags] = useState([]);
   const [targets, setTargets] = useState(["feed"]);
   const [plan, setPlan] = useState("basic"); // Replace with user plan logic
-  const userId = "guest"; // Replace with session.user.id if available
+  const user = getCurrentUser();
+  const userId = user.id;
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   // Quota check stub
   const quotaExceeded = false; // Replace with real quota logic
 
   const handlePublish = async () => {
+    if (!canAccess(user, "feed:post")) {
+      setPaywallOpen(true);
+      return;
+    }
     if (quotaExceeded) {
       Alert.alert("Paywall", "Upgrade your plan to publish more posts.");
       return;
@@ -86,6 +95,13 @@ export default function SocialsPostEditor({ route, navigation }) {
         <Ionicons name="newspaper-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
         <Text style={styles.publishText}>Publish</Text>
       </TouchableOpacity>
+      <PaywallModal
+        visible={paywallOpen}
+        onClose={() => setPaywallOpen(false)}
+        required={requiredPlan("feed:post")}
+        current={user.plan}
+        context="Posting to the feed is a Pro Basic feature. Upgrade to share updates with your team."
+      />
     </ScrollView>
   );
 }
