@@ -1,9 +1,39 @@
 import React from "react";
-export default function PageHeader({ title, action }) {
+import { View, Text, StyleSheet } from "react-native";
+
+export default function PageHeader({ title, subtitle, action }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 16, borderBottom: "1px solid #eee" }}>
-      <h2 style={{ margin: 0 }}>{title}</h2>
+    <View style={styles.header}>
+      <View style={styles.titleBlock}>
+        <Text style={styles.title}>{title}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
       {action}
-    </div>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    backgroundColor: "#fff",
+  },
+  titleBlock: {
+    flexDirection: "column",
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 2,
+    color: "#23272A",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#64748B",
+  },
+});
