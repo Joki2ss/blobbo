@@ -41,55 +41,69 @@ export function DashboardScreen({ navigation }) {
 
       // pending docs: count requests with pending/partial
       return (
-        <Screen>
-          <PageHeader title="Dashboard" action={<Button title="Add client" onPress={() => navigation.navigate("NewClient")} />} />
-          <ScrollView contentContainerStyle={styles.content}>
-            {metaLine ? (
+        <>
+          <Screen>
+            <PageHeader title="Dashboard" action={<Button title="Add client" onPress={() => navigation.navigate("NewClient")} />} />
+            <ScrollView contentContainerStyle={styles.content}>
+              {metaLine ? (
+                <AdminCard>
+                  <View style={styles.metaRow}>
+                    <Text style={styles.metaText}>{metaLine}</Text>
+                  </View>
+                </AdminCard>
+              ) : null}
+              <View style={styles.kpiRow}>
+                <KpiCard
+                  label="Active clients"
+                  value={kpis.activeClients}
+                  icon={<Ionicons name="people-outline" size={20} color={theme.colors.primary} />} />
+                <View style={{ width: theme.spacing.md }} />
+                <KpiCard
+                  label="Pending docs"
+                  value={kpis.pendingDocs}
+                  icon={<Ionicons name="document-text-outline" size={20} color={theme.colors.warning} />} />
+              </View>
+
+              <View style={styles.kpiRow}>
+                <>
+                  <KpiCard
+                    label="Unread messages"
+                    value={kpis.unreadMessages}
+                    icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />} />
+                  <View style={{ width: theme.spacing.md }} />
+                  <AdminCard>
+                    <Button title="Ask support" onPress={() => navigation.navigate("Support")} />
+                  </AdminCard>
+                </>
+              </View>
+
               <AdminCard>
-                <View style={styles.metaRow}>
-                  <Text style={styles.metaText}>{metaLine}</Text>
+                <View style={styles.actionsCol}>
+                  <Button title="Add client" onPress={() => navigation.navigate("NewClient")} />
+                  <View style={{ height: theme.spacing.md }} />
+                  <Button
+                    title="New document request"
+                    variant="secondary"
+                    onPress={() => navigation.navigate("NewDocumentRequest")} />
+                  <View style={{ height: theme.spacing.md }} />
+                  <Button title="Open support" variant="secondary" onPress={() => navigation.navigate("Support")} />
                 </View>
               </AdminCard>
-            ) : null}
-            <View style={styles.kpiRow}>
-              <KpiCard
-                label="Active clients"
-                value={kpis.activeClients}
-                icon={<Ionicons name="people-outline" size={20} color={theme.colors.primary} />} />
-              <View style={{ width: theme.spacing.md }} />
-              <KpiCard
-                label="Pending docs"
-                value={kpis.pendingDocs}
-                icon={<Ionicons name="document-text-outline" size={20} color={theme.colors.warning} />} />
+            </ScrollView>
+          </Screen>
+          <Card>
+            <View style={styles.actionsCol}>
+              <Button title="Add client" onPress={() => navigation.navigate("NewClient")} />
+              <View style={{ height: theme.spacing.md }} />
+              <Button
+                title="New document request"
+                variant="secondary"
+                onPress={() => navigation.navigate("NewDocumentRequest")} />
+              <View style={{ height: theme.spacing.md }} />
+              <Button title="Open support" variant="secondary" onPress={() => navigation.navigate("Support")} />
             </View>
-
-            <View style={styles.kpiRow}>
-              <>
-                <KpiCard
-                  label="Unread messages"
-                  value={kpis.unreadMessages}
-                  icon={<Ionicons name="chatbubbles-outline" size={20} color={theme.colors.danger} />} />
-                <View style={{ width: theme.spacing.md }} />
-                <AdminCard>
-                  <Button title="Ask support" onPress={() => navigation.navigate("Support")} />
-                </AdminCard>
-              </>
-            </View>
-
-            <AdminCard>
-              <View style={styles.actionsCol}>
-                <Button title="Add client" onPress={() => navigation.navigate("NewClient")} />
-                <View style={{ height: theme.spacing.md }} />
-                <Button
-                  title="New document request"
-                  variant="secondary"
-                  onPress={() => navigation.navigate("NewDocumentRequest")} />
-                <View style={{ height: theme.spacing.md }} />
-                <Button title="Open support" variant="secondary" onPress={() => navigation.navigate("Support")} />
-              </View>
-            </AdminCard>
-          </ScrollView>
-        </Screen>
+          </Card>
+        </>
       );
       <>
         <KpiCard
